@@ -1,0 +1,30 @@
+# Overrides on top of detekt's default configuration (--build-upon-default-config).
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][A-Za-z0-9_]*'
+
+complexity:
+  LongParameterList:
+    functionThreshold: 8
+    ignoreDefaultParameters: true
+  TooManyFunctions:
+    ignoreAnnotatedFunctions: ['Preview']
+    # ReportSender has 11 public operations plus private helpers for one state machine.
+    thresholdInClasses: 25
+
+style:
+  MagicNumber:
+    # Enum entries carry spec-defined values (HID usage IDs, report bit masks).
+    ignoreEnums: true
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotated: ['Preview']
+    excludes: ['**/test/**', '**/testFixtures/**', '**/androidTest/**']
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
+  ReturnCount:
+    excludeGuardClauses: true
+  MaxLineLength:
+    maxLineLength: 120

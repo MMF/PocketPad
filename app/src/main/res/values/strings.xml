@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mobile TrackPad</string>
+    <string name="home_title">Mobile TrackPad</string>
+    <string name="home_body">Use this phone as a Bluetooth mouse for your computer. No software is needed on the computer.</string>
+    <string name="home_status_scaffold">Bluetooth connection is not available in this build yet.</string>
+</resources>

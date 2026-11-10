@@ -356,15 +356,33 @@ testing.
 
 ## 11. Toolchain
 
-Latest stable versions found on 2026-11-11: Android Gradle Plugin 9.5.1, Gradle 9.9.1, Kotlin
-2.4.21, Compose BOM 2026.09.00, compile/target SDK 37. AGP 9 has Kotlin support built in, so
-`org.jetbrains.kotlin.android` is not applied.
+Versions were chosen as one supported combination, preferring what was already installed and
+cached on the development machine, rather than the newest release of each tool.
 
-Open tooling risks, to be settled by actually building in Milestone 1:
+| Component | Version | Why |
+|---|---|---|
+| JDK (Gradle daemon and compilation) | 17 | Minimum and default JDK for AGP 9.x; pinned via `gradle/gradle-daemon-jvm.properties` |
+| Gradle (wrapper) | 9.4.1 | Already cached; the version listed for AGP 9.2 in the AGP compatibility table |
+| Android Gradle Plugin | 9.2.1 | Cached. AGP 9.3 requires Gradle ≥ 9.5.0, so it does not pair with 9.4.1. API 37 needs AGP ≥ 9.1.1 |
+| Kotlin | 2.2.10 | The Kotlin Gradle Plugin version AGP 9.2.1 itself depends on (AGP 9 built-in Kotlin) |
+| Compose compiler plugin | 2.2.10 | Must equal the Kotlin version |
+| Compose UI / foundation | 1.12.1 | Requires compileSdk 37 and AGP 9. Compose 1.13 is the first line requiring kotlinc 2.2+ |
+| Material 3 | 1.4.0 | Latest stable (1.5.0 is still a release candidate) |
+| compileSdk / targetSdk / minSdk | 37 / 37 / 28 | Android 17 is the latest stable platform |
+| ktlint | 1.8.0 | Run through Spotless 8.4.0 (cached; includes its Gradle 9 fix) |
+| detekt | 1.23.8 | Latest stable; run as the standalone CLI in an isolated configuration |
 
-- detekt's only stable release (1.23.8) was built against Kotlin 2.0.21; behaviour with Kotlin
-  2.4 and JDK 25 is unconfirmed.
-- The ktlint Gradle plugins do not state AGP 9 support.
+detekt runs as its own CLI rather than through the detekt Gradle plugin. The plugin's
+compatibility with Gradle 9 is undocumented, and the CLI keeps detekt's bundled Kotlin 2.0.21
+compiler off the build classpath. It runs without type resolution, so type-aware rules are
+inactive.
+
+Verified locally (2026-11-11): the full check (`spotlessCheck detekt test :app:lintDebug
+:app:assembleDebug`) passes on this combination. CI uses the same commands; its first run on
+GitHub has not happened yet.
+
+Upgrade path when needed: Gradle 9.5+ allows AGP 9.3; a newer Kotlin needs a matching Compose
+compiler plugin; detekt 2.0 (still alpha) would add Kotlin 2.4 support.
 
 ## 12. Testing and evidence
 
