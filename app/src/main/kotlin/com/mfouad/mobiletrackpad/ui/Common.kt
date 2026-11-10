@@ -61,10 +61,12 @@ fun Problem.titleRes(): Int =
     when (this) {
         Problem.BLUETOOTH_UNAVAILABLE -> R.string.problem_bluetooth_unavailable_title
         Problem.BLUETOOTH_DISABLED -> R.string.problem_bluetooth_disabled_title
+        Problem.BLUETOOTH_TURNED_OFF_WHILE_ACTIVE -> R.string.problem_bluetooth_turned_off_title
         Problem.MISSING_PERMISSIONS -> R.string.problem_missing_permissions_title
         Problem.SERVICE_START_BLOCKED -> R.string.problem_service_blocked_title
         Problem.PROFILE_UNAVAILABLE -> R.string.problem_profile_unavailable_title
         Problem.REGISTRATION_REJECTED -> R.string.problem_registration_rejected_title
+        Problem.REGISTRATION_STALLED -> R.string.problem_registration_stalled_title
         Problem.REGISTRATION_LOST -> R.string.problem_registration_lost_title
         Problem.CONNECTION_FAILED -> R.string.problem_connection_failed_title
         Problem.CONNECTION_TIMEOUT -> R.string.problem_connection_timeout_title
@@ -77,10 +79,12 @@ fun Problem.bodyRes(): Int =
     when (this) {
         Problem.BLUETOOTH_UNAVAILABLE -> R.string.problem_bluetooth_unavailable_body
         Problem.BLUETOOTH_DISABLED -> R.string.problem_bluetooth_disabled_body
+        Problem.BLUETOOTH_TURNED_OFF_WHILE_ACTIVE -> R.string.problem_bluetooth_turned_off_body
         Problem.MISSING_PERMISSIONS -> R.string.problem_missing_permissions_body
         Problem.SERVICE_START_BLOCKED -> R.string.problem_service_blocked_body
         Problem.PROFILE_UNAVAILABLE -> R.string.problem_profile_unavailable_body
         Problem.REGISTRATION_REJECTED -> R.string.problem_registration_rejected_body
+        Problem.REGISTRATION_STALLED -> R.string.problem_registration_stalled_body
         Problem.REGISTRATION_LOST -> R.string.problem_registration_lost_body
         Problem.CONNECTION_FAILED -> R.string.problem_connection_failed_body
         Problem.CONNECTION_TIMEOUT -> R.string.problem_connection_timeout_body

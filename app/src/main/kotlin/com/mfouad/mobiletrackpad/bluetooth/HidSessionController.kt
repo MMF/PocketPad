@@ -267,7 +267,7 @@ class HidSessionController(
         } else {
             setTimeout(REGISTER_TIMEOUT_NANOS) {
                 if (state.value.phase == Phase.REGISTERING) {
-                    dispatch(SessionEvent.RegistrationRejected("no onAppStatusChanged within 5 s"))
+                    dispatch(SessionEvent.RegistrationTimedOut)
                 }
             }
         }

@@ -63,6 +63,11 @@ Entries are added only after a person has confirmed the result on real hardware.
   layout-independent keys (modifier + wheel, arrows, Tab, function keys).
 - The descriptor is fixed once released because computers cache it when pairing. After an
   update that changes it, remove and redo the pairing.
+- **Tap Stop before turning Bluetooth off.** On a Samsung Galaxy S25 Ultra (Android 17),
+  turning Bluetooth off while the trackpad is enabled left the phone unable to register the
+  trackpad again until it was restarted. If "Enable trackpad" fails with "Registration did not
+  complete", restart the phone. Details in
+  [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#15-observed-platform-issues).
 - See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/HID.md](docs/HID.md) for design
   details and open questions.
 

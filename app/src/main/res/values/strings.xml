@@ -55,6 +55,8 @@
     <string name="problem_bluetooth_unavailable_body">This phone does not report a Bluetooth adapter.</string>
     <string name="problem_bluetooth_disabled_title">Bluetooth is off</string>
     <string name="problem_bluetooth_disabled_body">Turn on Bluetooth, then enable the trackpad again.</string>
+    <string name="problem_bluetooth_turned_off_title">Bluetooth was turned off</string>
+    <string name="problem_bluetooth_turned_off_body">Bluetooth was turned off while the trackpad was enabled, so the session ended. On some phones this stops the trackpad from registering again until the phone restarts. If enabling fails after you turn Bluetooth back on, restart the phone. Next time, tap Stop before turning Bluetooth off.</string>
     <string name="problem_missing_permissions_title">Permission missing</string>
     <string name="problem_missing_permissions_body">The Nearby devices permission was not granted. Without it the app cannot act as a Bluetooth mouse.</string>
     <string name="problem_service_blocked_title">Could not start</string>
@@ -63,6 +65,8 @@
     <string name="problem_profile_unavailable_body">Android did not provide its Bluetooth HID device service. Some phone manufacturers disable this feature. Try turning Bluetooth off and on, then try again. If it keeps failing, this phone may not support acting as a Bluetooth mouse.</string>
     <string name="problem_registration_rejected_title">Registration rejected</string>
     <string name="problem_registration_rejected_body">Android refused to register the trackpad. Another app may currently be acting as a Bluetooth keyboard or mouse; close it and try again. Registration also fails if the app is not in the foreground.</string>
+    <string name="problem_registration_stalled_title">Registration did not complete</string>
+    <string name="problem_registration_stalled_body">Android accepted the request but never finished registering the trackpad. On some phones this happens after Bluetooth was turned off while the trackpad was enabled, and it lasts until the phone restarts. Restart the phone, then enable the trackpad again. While in this state the phone may also fail to connect to its own Bluetooth mice and keyboards.</string>
     <string name="problem_registration_lost_title">Trackpad was unregistered</string>
     <string name="problem_registration_lost_body">Android ended the trackpad registration, for example because Bluetooth restarted or the app lost foreground priority. Enable it again.</string>
     <string name="problem_connection_failed_title">Connection failed</string>

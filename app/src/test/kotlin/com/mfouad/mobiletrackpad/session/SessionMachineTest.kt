@@ -149,7 +149,27 @@ class SessionMachineTest {
     fun bluetoothOffEndsActiveSession() {
         val s = run(*connected, AdapterOff)
         assertEquals(Phase.IDLE, s.phase)
-        assertEquals(Problem.BLUETOOTH_DISABLED, s.problem)
+        assertEquals(Problem.BLUETOOTH_TURNED_OFF_WHILE_ACTIVE, s.problem)
+    }
+
+    @Test
+    fun bluetoothOffWhileOnlyRegisteredIsReportedTheSameWay() {
+        assertEquals(Problem.BLUETOOTH_TURNED_OFF_WHILE_ACTIVE, run(*registered, AdapterOff).problem)
+    }
+
+    @Test
+    fun bluetoothAlreadyOffAtStartIsAPlainDisabledProblem() {
+        assertEquals(Problem.BLUETOOTH_DISABLED, run(Blocked(Problem.BLUETOOTH_DISABLED)).problem)
+        assertEquals(SessionState(), run(AdapterOff))
+    }
+
+    @Test
+    fun registrationTimeoutIsDistinctFromRejection() {
+        val s = run(StartRequested(), ProxyConnected, SessionEvent.RegistrationTimedOut)
+        assertEquals(Phase.IDLE, s.phase)
+        assertEquals(Problem.REGISTRATION_STALLED, s.problem)
+        // A late timeout after registration completed changes nothing.
+        assertEquals(Phase.REGISTERED, run(*registered, SessionEvent.RegistrationTimedOut).phase)
     }
 
     @Test

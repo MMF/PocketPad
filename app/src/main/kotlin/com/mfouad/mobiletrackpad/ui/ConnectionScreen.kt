@@ -230,7 +230,7 @@ private fun ProblemCard(
         detail?.let { Text(stringResource(R.string.problem_detail, it), style = MaterialTheme.typography.bodySmall) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             when (problem) {
-                Problem.BLUETOOTH_DISABLED -> {
+                Problem.BLUETOOTH_DISABLED, Problem.BLUETOOTH_TURNED_OFF_WHILE_ACTIVE -> {
                     TextButton(
                         onClick = actions.turnOnBluetooth,
                     ) { Text(stringResource(R.string.action_turn_on_bluetooth)) }

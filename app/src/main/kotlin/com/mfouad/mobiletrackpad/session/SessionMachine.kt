@@ -18,10 +18,20 @@ enum class Phase {
 enum class Problem {
     BLUETOOTH_UNAVAILABLE,
     BLUETOOTH_DISABLED,
+
+    /**
+     * Bluetooth was turned off while the HID app was registered. On the Samsung build tested
+     * (docs/ARCHITECTURE.md section 15) this leaves the stack unable to register again until
+     * the phone restarts.
+     */
+    BLUETOOTH_TURNED_OFF_WHILE_ACTIVE,
     MISSING_PERMISSIONS,
     SERVICE_START_BLOCKED,
     PROFILE_UNAVAILABLE,
     REGISTRATION_REJECTED,
+
+    /** registerApp was accepted but the stack never reported the result. */
+    REGISTRATION_STALLED,
     REGISTRATION_LOST,
     CONNECTION_FAILED,
     CONNECTION_TIMEOUT,
@@ -78,6 +88,9 @@ sealed interface SessionEvent {
     data class AppStatus(
         val registered: Boolean,
     ) : Lifecycle
+
+    /** registerApp returned true but no onAppStatusChanged arrived in time. */
+    data object RegistrationTimedOut : Lifecycle
 
     data object StopRequested : Lifecycle
 
@@ -163,8 +176,8 @@ object SessionMachine {
                 )
             }
 
-            is SessionEvent.RegistrationRejected -> {
-                s.ifPhase(Phase.REGISTERING) { rejected(e.detail) }
+            is SessionEvent.RegistrationRejected, SessionEvent.RegistrationTimedOut -> {
+                s.ifPhase(Phase.REGISTERING) { registrationFailed(e) }
             }
 
             is SessionEvent.AppStatus -> {
@@ -183,7 +196,7 @@ object SessionMachine {
             }
 
             SessionEvent.AdapterOff -> {
-                if (s.isActive) SessionState(problem = Problem.BLUETOOTH_DISABLED) else s
+                if (s.isActive) SessionState(problem = Problem.BLUETOOTH_TURNED_OFF_WHILE_ACTIVE) else s
             }
         }
 
@@ -228,6 +241,13 @@ object SessionMachine {
         }
 
     private val CONNECTING_OR_CONNECTED = setOf(Phase.CONNECTING, Phase.CONNECTED)
+
+    private fun registrationFailed(e: SessionEvent.Lifecycle): SessionState =
+        if (e is SessionEvent.RegistrationRejected) {
+            rejected(e.detail)
+        } else {
+            SessionState(problem = Problem.REGISTRATION_STALLED)
+        }
 
     private fun rejected(detail: String) = SessionState(problem = Problem.REGISTRATION_REJECTED, detail = detail)
 

@@ -439,3 +439,39 @@ All need a physical Android phone and a computer.
 5. Do hosts reconnect to the phone on their own after it re-registers, and does that interact
    badly with the app's bounded reconnect?
 6. Does the bonded-before-registration heuristic produce false warnings in practice?
+
+## 15. Observed platform issues
+
+### Bluetooth turned off while registered blocks re-registration (Samsung)
+
+Observed 2026-11-11 on a Samsung Galaxy S25 Ultra (SM-S938B), Android 17 (API 37), build
+`S938BXXSDDZJ1`, and confirmed by the user on the phone. Other phones are untested.
+
+On this build, registering an HID device app first disables the phone's HID Host role, and
+unregistering re-enables it. If Bluetooth is turned off **while the app is registered**
+(connected to a computer or not):
+
+1. At shutdown, HID Host logs `cleanup_in_jni_thread: HH disabling or disabled already` and skips
+   its normal cleanup.
+2. After Bluetooth is turned back on, the HID Host profile starts but never re-enables (no
+   `bta_hh_api_enable` / `BTA_HH_ENABLE_EVT`).
+3. The next `registerApp` returns `true`, the stack asks HID Host to disable, HID Host reports a
+   Samsung-specific `BTA_HH_REG_HD_STATE: BTHH_HS_HID_NOT_READY`, and because HID Host was already
+   disabled no `BTA_HH_DISABLE_EVT` follows. Registration waits forever; `onAppStatusChanged`
+   never arrives.
+
+Turning Bluetooth off and on again does not clear it (the Bluetooth process keeps running). A
+phone restart does. While stuck, the phone's own Bluetooth mice and keyboards are presumably
+affected too, since HID Host is down (not tested).
+
+Stopping the session first (which unregisters the app) and then turning Bluetooth off is safe:
+HID Host re-enables on unregister and again after Bluetooth returns.
+
+The app cannot prevent this: it learns of the adapter turning off (`ACTION_STATE_CHANGED`) only
+after the stack has started disabling. What the app does:
+
+- Bluetooth turning off during a session is reported as its own problem
+  (`BLUETOOTH_TURNED_OFF_WHILE_ACTIVE`) with advice to tap Stop first next time and to restart
+  the phone if enabling fails.
+- A `registerApp` that is accepted but never answered within 5 s is reported as
+  `REGISTRATION_STALLED`, with advice to restart the phone, instead of blaming another app.
