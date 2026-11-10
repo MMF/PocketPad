@@ -53,7 +53,8 @@ class TestInput(
 
     /** Moves right, down, left, up: SIDE counts per side in small steps, ending where it began. */
     private fun square() {
-        cancel()
+        // Ignore taps while a square is running: restarting mid-way would leave the pointer offset.
+        if (pattern != null) return
         val steps =
             listOf(1f to 0f, 0f to 1f, -1f to 0f, 0f to -1f).flatMap { (x, y) ->
                 List(STEPS_PER_SIDE) { x * STEP to y * STEP }

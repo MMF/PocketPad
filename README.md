@@ -52,7 +52,7 @@ pair again.
 
 | Phone | Android | Computer | OS | Result |
 |---|---|---|---|---|
-| — | — | — | — | Nothing tested on hardware yet |
+| Samsung Galaxy S25 Ultra (SM-S938B) | 17 (API 37), build S938BXXSDDZJ1 | MacBook Pro (M4 Max) | macOS 27.2 (26B123) | Milestone 2 checks passed: pairing after enabling, connect from the phone, pointer movement, left and right click, vertical scroll, volume up and down, held button released on leaving the screen, on Stop, and when the link dropped. Known issue: turning Bluetooth off while enabled needs a phone restart (see below). |
 
 Entries are added only after a person has confirmed the result on real hardware.
 

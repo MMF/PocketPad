@@ -216,8 +216,14 @@ Accepted, logged in diagnostics, otherwise ignored.
   12-byte single-packet recommendation of BT HID §5.1.7 **[SPEC]**.
 
 Sign conventions (positive wheel = scroll up / away from user; positive pan = right; positive Y
-= down) follow common mouse behaviour and are **[UNVERIFIED]** per host. Natural versus
-reversed scrolling is applied on the phone before encoding.
+= down) follow common mouse behaviour.
+
+- **macOS 27.2, confirmed by the user (2026-11-11):** +X moved the pointer right and +Y down. A
+  wheel value of −3 moved the page up with macOS natural scrolling on, which is what a physical
+  wheel rolled towards the user does under natural scrolling. So the wheel sign is right, and
+  macOS applies its own natural-scrolling setting to this device. The app's direction setting
+  must therefore default to "same as a physical wheel", or the two inversions cancel out.
+- Pan sign on macOS, and all signs on Windows and Linux: **[UNVERIFIED]**.
 
 ### 4.4 Report 3 — consumer control (2 bytes)
 
@@ -363,9 +369,18 @@ and compares it with the encoders.
 
 ## 9. Open questions for hardware testing
 
-1. Do Windows, macOS and Linux (BlueZ) accept this composite descriptor over Bluetooth?
-2. Do all three honour 16-bit relative X/Y and AC Pan for horizontal scrolling?
-3. Are consumer usages sent through a 16-bit array accepted by all three?
-4. Does any host switch the device to boot mode, and when?
-5. Wheel, pan and Y sign conventions per host.
+Answered for macOS 27.2 (MacBook Pro M4 Max) with a Galaxy S25 Ultra on Android 17, confirmed
+by the user on 2026-11-11: the descriptor is accepted (macOS lists the device with HID service
+and starts its Keyboard Setup Assistant); 16-bit X/Y, buttons 1–3 and the vertical wheel work;
+Volume Increment/Decrement through the 16-bit consumer array work, each press changing one step
+with no repeat; on connect macOS sends SET_PROTOCOL(Report) and never selected boot mode;
+GET_REPORT and SET_REPORT were not observed from macOS.
+
+Still open:
+
+1. Do Windows and Linux (BlueZ) accept this composite descriptor over Bluetooth?
+2. AC Pan horizontal scrolling on any host (not yet exercised), and buttons 4–5.
+3. Consumer usages other than volume (mute, play/pause, tracks) on any host.
+4. Does Windows or Linux switch the device to boot mode, and when?
+5. Pan sign on every host; wheel and Y signs on Windows and Linux.
 6. Does the "registered but no SDP record" case occur on shipped Android builds?
