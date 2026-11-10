@@ -6,13 +6,22 @@ naming:
     constantPattern: '[A-Z][A-Za-z0-9_]*'
 
 complexity:
+  CyclomaticComplexMethod:
+    # State-machine transition tables are a flat `when`; count only non-trivial branches.
+    ignoreSimpleWhenEntries: true
+  LongMethod:
+    # Compose UI functions are declarative layout and grow long without growing complex.
+    ignoreAnnotated: ['Composable']
   LongParameterList:
     functionThreshold: 8
     ignoreDefaultParameters: true
   TooManyFunctions:
     ignoreAnnotatedFunctions: ['Preview']
-    # ReportSender has 11 public operations plus private helpers for one state machine.
-    thresholdInClasses: 25
+    # ReportSender and HidSessionController each wrap one state machine with many small
+    # private helpers; splitting them further would scatter the state they share.
+    thresholdInClasses: 32
+    # SessionMachine is one transition function split into small named helpers.
+    thresholdInObjects: 16
 
 style:
   MagicNumber:
@@ -25,6 +34,7 @@ style:
   UnusedPrivateMember:
     ignoreAnnotated: ['Preview']
   ReturnCount:
+    max: 3
     excludeGuardClauses: true
   MaxLineLength:
     maxLineLength: 120

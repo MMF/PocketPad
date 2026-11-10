@@ -125,6 +125,36 @@ class ReportSender(
         target = NEUTRAL_STATE
     }
 
+    /**
+     * The input report describing what the host should currently see for [reportId], for
+     * answering GET_REPORT. Relative fields are zero. Null if the report does not exist in the
+     * current protocol mode.
+     */
+    fun currentInputReport(reportId: Int): HidReport? =
+        when (reportId) {
+            HidDescriptor.REPORT_ID_KEYBOARD -> {
+                ReportEncoder.keyboard(sent.keyboard)
+            }
+
+            HidDescriptor.REPORT_ID_MOUSE -> {
+                mouseReport(Delta.ZERO)
+            }
+
+            HidDescriptor.REPORT_ID_CONSUMER -> {
+                if (protocolMode ==
+                    ProtocolMode.REPORT
+                ) {
+                    ReportEncoder.consumer(sent.consumer)
+                } else {
+                    null
+                }
+            }
+
+            else -> {
+                null
+            }
+        }
+
     /** Before an intentional disconnect or shutdown: send neutral reports for every report ID. */
     fun shutdown() {
         resetAll()

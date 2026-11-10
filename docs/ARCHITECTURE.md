@@ -213,7 +213,7 @@ still runs and appears only in the system Task Manager **[DOC]**.
 | Screen off | Same as leaving the trackpad screen. |
 | Return to the trackpad screen | Control resumes. |
 | Stop (in-app or notification) | Session **ends** (stop sequence above). |
-| User stops the app from the system Task Manager (API 33+) | The process is killed with no callback **[DOC]**. No release reports can be sent. On next launch `ApplicationExitInfo` is checked and the user is told why the session ended. |
+| User stops the app from the system Task Manager (API 33+) | The process is killed with no callback **[DOC]**. No release reports can be sent. On next launch `ApplicationExitInfo` is checked and the user is told why the session ended *(Milestone 5)*. |
 | Bluetooth turned off | Registration lost; session returns to Idle with the "Bluetooth disabled" diagnostic. |
 
 The screen is kept awake only while the trackpad surface is visible and connected.
@@ -237,8 +237,11 @@ is never inferred from its name; the user picks a profile per computer.
 ### 5.4 Connection and reconnection
 
 - The user chooses a paired computer; the app calls `connect` and waits for the callback.
+  A host may also connect on its own while the app is registered; that is accepted.
 - After an unexpected disconnect during an active session, the app retries the last host a
-  bounded number of times with increasing delay. The user can cancel.
+  bounded number of times with increasing delay. The user can cancel. *(Planned for
+  Milestone 5. Until then an unexpected disconnect returns to "Ready" with a "Connection lost"
+  message and the user reconnects manually.)*
 - No automatic reconnect after an explicit disconnect.
 - No automatic reconnect after `onVirtualCableUnplug`: the session ends for that host and the
   user is prompted to re-pair.
@@ -399,8 +402,14 @@ as working on emulator or log evidence alone.
   from release builds) implements `OutputSink` and records reports instead of sending them. On
   the emulator it replaces the Bluetooth transport, so touch input runs through the recognizer,
   mapper and sender unchanged.
-- **Instrumented tests** — Compose UI tests inject multi-touch input on the trackpad surface and
-  assert on the recorded reports.
+- **Simulated computer** — in debug builds the Connection screen offers "Start simulated
+  computer". It drives the same session state machine and report sender, with the recorder as
+  the transport, and needs no Bluetooth or foreground service.
+- **Instrumented tests** — `./gradlew :app:connectedDebugAndroidTest` on an emulator. They
+  drive the real UI against the simulated computer and assert on the exact recorded reports
+  (Milestone 2: test-input buttons, neutral-on-connect, release-on-leave, stop). From
+  Milestone 3 they also inject multi-touch input on the trackpad surface. CI runs only the JVM
+  checks; instrumented tests are run locally.
 - **Real-device tests** — one test at a time: install the build, capture logcat, give numbered
   steps, ask a specific question about what happened, then compare the answer with logcat and
   the Diagnostics log before drawing a conclusion. A phone/computer/OS combination enters the

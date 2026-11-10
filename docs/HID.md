@@ -330,8 +330,14 @@ GET_REPORT for an input report returns "the instantaneous state of the fields" (
 §3.1.2.3) **[SPEC]**; relative fields have no held state, so they are reported as zero.
 
 `onGetReport`'s `bufferSize` is documented as "application shall respond with at least given
-number of bytes" **[DOC]**. The app replies with the report's defined length and zero-pads if a
-larger size is requested.
+number of bytes" **[DOC]**; AOSP passes 0 unless the host set the size-follows bit **[AOSP]**.
+The app always replies with the report's exact defined length and logs `bufferSize` in
+diagnostics. It does not pad: BT HID says a report whose length does not match the descriptor
+is ignored **[SPEC]**, so padding would make the reply invalid. How hosts react when they ask
+for a different size is **[UNVERIFIED]**.
+
+Implementation: `HidRequestHandler` (pure, unit-tested) decides each reply;
+`HidSessionController` performs it with `replyReport` or `reportError`.
 
 ### What `sendReport` does and does not tell us
 

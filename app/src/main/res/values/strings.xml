@@ -1,7 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mobile TrackPad</string>
-    <string name="home_title">Mobile TrackPad</string>
-    <string name="home_body">Use this phone as a Bluetooth mouse for your computer. No software is needed on the computer.</string>
-    <string name="home_status_scaffold">Bluetooth connection is not available in this build yet.</string>
+
+    <!-- Common actions -->
+    <string name="action_stop">Stop</string>
+    <string name="action_back">Back</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_refresh">Refresh list</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="action_open_bluetooth_settings">Open Bluetooth settings</string>
+    <string name="action_open_app_settings">Open app settings</string>
+    <string name="action_turn_on_bluetooth">Turn on Bluetooth</string>
+    <string name="action_grant_permission">Grant permission</string>
+
+    <!-- Connection screen -->
+    <string name="connection_title">Mobile TrackPad</string>
+    <string name="connection_intro">Use this phone as a Bluetooth mouse for your computer. No software is needed on the computer.</string>
+    <string name="action_enable">Enable trackpad</string>
+    <string name="action_simulate">Start simulated computer (debug build)</string>
+    <string name="action_make_visible">Make phone visible for pairing</string>
+    <string name="action_open_test">Test input</string>
+    <string name="action_open_diagnostics">Diagnostics</string>
+    <string name="status_heading">Status</string>
+    <string name="status_idle">Off</string>
+    <string name="status_acquiring">Starting Bluetooth HID…</string>
+    <string name="status_registering">Registering as a mouse and keyboard…</string>
+    <string name="status_registered">Ready. Waiting for a computer.</string>
+    <string name="status_connecting">Connecting to %1$s…</string>
+    <string name="status_connected">Connected to %1$s</string>
+    <string name="status_disconnecting">Disconnecting…</string>
+    <string name="status_stopping">Stopping…</string>
+    <string name="status_simulated">Simulated computer (debug build). Reports are recorded, not sent.</string>
+    <string name="protocol_mode_report">Report mode</string>
+    <string name="protocol_mode_boot">Boot mode (limited: no scrolling, media keys or buttons 4–5)</string>
+
+    <string name="permission_heading">Permission needed</string>
+    <string name="permission_rationale">To act as a Bluetooth mouse, Mobile TrackPad needs the Nearby devices permission. It is used only to talk to computers you pair with and to make the phone visible during pairing. Notifications are optional: they show a Stop button while the trackpad is active.</string>
+
+    <string name="pairing_heading">How to pair</string>
+    <string name="pairing_steps">1. Keep this screen open with the trackpad enabled.\n2. Tap “Make phone visible for pairing”.\n3. On the computer, open Bluetooth settings and add a new device. Choose this phone.\n4. Confirm the pairing code on both devices if asked.\n\nPair only after enabling the trackpad. If this phone was paired with the computer before, remove the pairing on both the phone and the computer first, then pair again.</string>
+
+    <string name="hosts_heading">Paired devices</string>
+    <string name="hosts_empty">No paired devices. Pair the phone from the computer’s Bluetooth settings.</string>
+    <string name="hosts_need_permission">Grant the Nearby devices permission to see paired devices.</string>
+    <string name="host_flag_ready">Paired while the trackpad was enabled.</string>
+    <string name="host_flag_maybe_repair">Paired before the trackpad was enabled. If connecting fails, remove the pairing on both devices and pair again.</string>
+    <string name="host_flag_needs_repair">This computer removed the trackpad. Remove the pairing on both devices and pair again.</string>
+    <string name="host_flag_not_computer">Not identified as a computer.</string>
+    <string name="host_last">Last used</string>
+
+    <!-- Problems: title and explanation -->
+    <string name="problem_bluetooth_unavailable_title">Bluetooth not available</string>
+    <string name="problem_bluetooth_unavailable_body">This phone does not report a Bluetooth adapter.</string>
+    <string name="problem_bluetooth_disabled_title">Bluetooth is off</string>
+    <string name="problem_bluetooth_disabled_body">Turn on Bluetooth, then enable the trackpad again.</string>
+    <string name="problem_missing_permissions_title">Permission missing</string>
+    <string name="problem_missing_permissions_body">The Nearby devices permission was not granted. Without it the app cannot act as a Bluetooth mouse.</string>
+    <string name="problem_service_blocked_title">Could not start</string>
+    <string name="problem_service_blocked_body">Android did not allow the trackpad to start its background service. Open the app and tap Enable again.</string>
+    <string name="problem_profile_unavailable_title">Bluetooth HID device mode unavailable</string>
+    <string name="problem_profile_unavailable_body">Android did not provide its Bluetooth HID device service. Some phone manufacturers disable this feature. Try turning Bluetooth off and on, then try again. If it keeps failing, this phone may not support acting as a Bluetooth mouse.</string>
+    <string name="problem_registration_rejected_title">Registration rejected</string>
+    <string name="problem_registration_rejected_body">Android refused to register the trackpad. Another app may currently be acting as a Bluetooth keyboard or mouse; close it and try again. Registration also fails if the app is not in the foreground.</string>
+    <string name="problem_registration_lost_title">Trackpad was unregistered</string>
+    <string name="problem_registration_lost_body">Android ended the trackpad registration, for example because Bluetooth restarted or the app lost foreground priority. Enable it again.</string>
+    <string name="problem_connection_failed_title">Connection failed</string>
+    <string name="problem_connection_failed_body">The computer did not accept the connection. Check that its Bluetooth is on and it is in range. If it was paired before the trackpad was enabled, remove the pairing on both devices and pair again.</string>
+    <string name="problem_connection_timeout_title">Connection timed out</string>
+    <string name="problem_connection_timeout_body">The computer did not respond in time. Check that it is awake, in range and has Bluetooth on, then try again.</string>
+    <string name="problem_connection_lost_title">Connection lost</string>
+    <string name="problem_connection_lost_body">The connection to the computer dropped. Held buttons were released on the phone. Connect again when ready.</string>
+    <string name="problem_host_unplugged_title">Computer removed the trackpad</string>
+    <string name="problem_host_unplugged_body">The computer ended the virtual cable, which usually means it removed this device. Remove the pairing on the phone too, then pair again. The app will not reconnect automatically.</string>
+    <string name="problem_detail">Technical detail: %1$s</string>
+
+    <!-- Test screen -->
+    <string name="test_title">Test input</string>
+    <string name="test_intro">Each button sends standard mouse or media-key reports to the connected computer. Watch the computer and compare with what you expect.</string>
+    <string name="test_not_connected">Not connected. Connect to a computer first.</string>
+    <string name="test_square">Move pointer in a square</string>
+    <string name="test_left_click">Left click</string>
+    <string name="test_right_click">Right click</string>
+    <string name="test_scroll_up">Scroll up 3 steps</string>
+    <string name="test_scroll_down">Scroll down 3 steps</string>
+    <string name="test_volume_up">Volume up</string>
+    <string name="test_volume_down">Volume down</string>
+    <string name="test_hold_left">Hold left button</string>
+    <string name="test_release_left">Release left button</string>
+    <string name="test_hold_note">Holding is released automatically if you leave this screen, the phone screen turns off, or the connection drops.</string>
+
+    <!-- Diagnostics screen -->
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_enable">Record diagnostics</string>
+    <string name="diagnostics_privacy">Off by default. The log stays on this phone unless you copy or share it.</string>
+    <string name="diagnostics_state">State: %1$s</string>
+    <string name="diagnostics_mode">Protocol: %1$s</string>
+    <string name="diagnostics_empty">No entries yet.</string>
+    <string name="diagnostics_copy">Copy</string>
+    <string name="diagnostics_share">Share</string>
+    <string name="diagnostics_clear">Clear</string>
+    <string name="diagnostics_copied">Log copied</string>
+    <string name="diagnostics_share_subject">Mobile TrackPad diagnostics</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Trackpad session</string>
+    <string name="notification_channel_description">Shown while the phone is acting as a Bluetooth mouse.</string>
+    <string name="notification_title">Trackpad active</string>
+    <string name="notification_starting">Starting…</string>
+    <string name="notification_waiting">Waiting for a computer</string>
+    <string name="notification_connecting">Connecting…</string>
+    <string name="notification_connected">Connected</string>
+    <string name="notification_stopping">Stopping…</string>
 </resources>
