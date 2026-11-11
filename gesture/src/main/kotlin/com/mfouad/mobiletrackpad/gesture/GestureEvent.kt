@@ -1,7 +1,8 @@
 package com.mfouad.mobiletrackpad.gesture
 
-/** Semantic output of gesture recognition. Units are surface pixels unless stated. */
+/** Semantic output of gesture recognition. Distances are surface pixels. */
 sealed interface GestureEvent {
+    /** One-finger pointer motion (or drag motion while a button is held). */
     data class Move(
         val dx: Float,
         val dy: Float,
@@ -15,13 +16,17 @@ sealed interface GestureEvent {
         val button: PointerButton,
     ) : GestureEvent
 
-    /** Positive [dy] scrolls content up (towards the top); positive [dx] scrolls right. */
+    /**
+     * Two-finger scroll: movement of the finger centroid (positive [dy] = fingers moved down,
+     * positive [dx] = fingers moved right). Inertia continues to emit these after lift-off.
+     * Mapping to wheel direction happens later, so this stays a plain finger movement.
+     */
     data class Scroll(
         val dx: Float,
         val dy: Float,
     ) : GestureEvent
 
-    /** [scaleDelta] > 0 when fingers spread apart. */
+    /** Relative change in finger distance since the previous event; > 0 when spreading. */
     data class Pinch(
         val scaleDelta: Float,
     ) : GestureEvent
@@ -35,7 +40,7 @@ sealed interface GestureEvent {
         val direction: SwipeDirection,
     ) : GestureEvent
 
-    /** Gesture cancelled: release anything held and stop inertia. */
+    /** Gesture cancelled: anything held has already been released with [ButtonUp]. */
     data object Cancel : GestureEvent
 }
 

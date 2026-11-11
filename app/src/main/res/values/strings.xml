@@ -79,6 +79,13 @@
     <string name="problem_host_unplugged_body">The computer ended the virtual cable, which usually means it removed this device. Remove the pairing on the phone too, then pair again. The app will not reconnect automatically.</string>
     <string name="problem_detail">Technical detail: %1$s</string>
 
+    <!-- Trackpad screen -->
+    <string name="action_open_trackpad">Open trackpad</string>
+    <string name="trackpad_connected">Connected to %1$s</string>
+    <string name="trackpad_not_connected">Not connected. Go back to connect.</string>
+    <string name="trackpad_surface_description">Trackpad surface. Move one finger to move the pointer. Tap to click. Use two fingers to scroll, or tap with two fingers to right-click.</string>
+    <string name="trackpad_hint">One finger: move · Tap: click · Tap, then touch and move: drag · Two fingers: scroll · Two-finger tap: right-click · Three-finger tap: middle-click</string>
+
     <!-- Test screen -->
     <string name="test_title">Test input</string>
     <string name="test_intro">Each button sends standard mouse or media-key reports to the connected computer. Watch the computer and compare with what you expect.</string>

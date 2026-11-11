@@ -50,6 +50,7 @@ private const val DISCOVERABLE_SECONDS = 120
 
 @Composable
 fun ConnectionScreen(
+    onOpenTrackpad: () -> Unit,
     onOpenTest: () -> Unit,
     onOpenDiagnostics: () -> Unit,
     modifier: Modifier = Modifier,
@@ -141,6 +142,9 @@ fun ConnectionScreen(
                 }
             }
 
+            Button(onClick = onOpenTrackpad, enabled = state.isConnected, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.action_open_trackpad))
+            }
             OutlinedButton(onClick = onOpenTest, enabled = state.isConnected, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.action_open_test))
             }
@@ -176,7 +180,7 @@ fun ConnectionScreen(
     }
 }
 
-private fun stopSession(
+fun stopSession(
     context: android.content.Context,
     state: SessionState,
 ) {

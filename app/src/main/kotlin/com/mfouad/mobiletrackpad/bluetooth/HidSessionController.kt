@@ -1,18 +1,12 @@
 package com.mfouad.mobiletrackpad.bluetooth
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothProfile
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Build
-import androidx.core.content.ContextCompat
 import com.mfouad.mobiletrackpad.DebugFeatures
 import com.mfouad.mobiletrackpad.data.HostStore
 import com.mfouad.mobiletrackpad.diagnostics.DiagnosticsLog
@@ -20,13 +14,19 @@ import com.mfouad.mobiletrackpad.diagnostics.DiagnosticsLog.Category
 import com.mfouad.mobiletrackpad.diagnostics.LoggingOutputSink
 import com.mfouad.mobiletrackpad.engine.Engine
 import com.mfouad.mobiletrackpad.gesture.Cancellable
+import com.mfouad.mobiletrackpad.gesture.GestureConfig
+import com.mfouad.mobiletrackpad.gesture.GestureEvent
+import com.mfouad.mobiletrackpad.gesture.GestureRecognizer
+import com.mfouad.mobiletrackpad.gesture.PointerFrame
 import com.mfouad.mobiletrackpad.hid.HidDescriptor
 import com.mfouad.mobiletrackpad.hid.HidReply
 import com.mfouad.mobiletrackpad.hid.HidReport
 import com.mfouad.mobiletrackpad.hid.HidRequestHandler
 import com.mfouad.mobiletrackpad.hid.OutputSink
+import com.mfouad.mobiletrackpad.hid.PointerSettings
 import com.mfouad.mobiletrackpad.hid.ProtocolMode
 import com.mfouad.mobiletrackpad.hid.ReportSender
+import com.mfouad.mobiletrackpad.hid.TrackpadMapper
 import com.mfouad.mobiletrackpad.session.LinkState
 import com.mfouad.mobiletrackpad.session.Phase
 import com.mfouad.mobiletrackpad.session.Problem
@@ -82,12 +82,32 @@ class HidSessionController(
     private var host: BluetoothDevice? = null
     private var simulatedSink: OutputSink? = null
     private var timeout: Cancellable? = null
-    private var receiversRegistered = false
+    private val broadcasts =
+        BluetoothBroadcasts(
+            context,
+            onAdapterTurningOff = {
+                engine.post {
+                    log.log(Category.BLUETOOTH) { "Bluetooth turning off" }
+                    dispatch(SessionEvent.AdapterOff)
+                }
+            },
+            onBondChanged = { address, bonded -> engine.post { onBondChanged(address, bonded) } },
+        )
 
     /** The ordered report path. Engine thread only. */
     val sender = ReportSender(LoggingOutputSink(OutputSink(::deliver), log), scheduler)
     private val requests = HidRequestHandler(sender::currentInputReport)
     private val testInput = TestInput(sender, scheduler, log)
+
+    private val density = context.resources.displayMetrics.density
+
+    /** Gesture-to-report mapping; settings become user-editable in Milestone 5. */
+    private val mapper = TrackpadMapper(sender, PointerSettings.forDensity(density))
+    private val recognizer =
+        GestureRecognizer(GestureConfig.forDensity(density), scheduler) { e ->
+            logGesture(e)
+            mapper.onEvent(e)
+        }.apply { onModeChange = { change -> log.log(Category.GESTURE) { "mode $change" } } }
 
     // --- public API (any thread) ---------------------------------------------------------
 
@@ -112,6 +132,23 @@ class HidSessionController(
 
     /** Runs [block] on the engine thread with the sender. Used by test controls and the trackpad. */
     fun withSender(block: (ReportSender) -> Unit) = engine.post { block(sender) }
+
+    /**
+     * Touch input from the trackpad surface. Ignored unless connected, so nothing is queued or
+     * replayed while there is no host.
+     */
+    fun onTouchFrames(frames: List<PointerFrame>) =
+        engine.post {
+            if (state.value.isConnected) frames.forEach(recognizer::onFrame)
+        }
+
+    /** The trackpad surface stopped being active: cancel gestures and inertia, release everything. */
+    fun pauseTrackpad() =
+        engine.post {
+            recognizer.cancel()
+            testInput.cancel()
+            sender.releaseAll()
+        }
 
     /** Sends a fixed test input (Milestone 2 test screen). */
     fun runTest(action: TestAction) = engine.post { testInput.run(action) }
@@ -160,12 +197,19 @@ class HidSessionController(
         val isConnected = new.phase == Phase.CONNECTED
         when {
             // Neutral reports first on every new connection.
-            !wasConnected && isConnected -> sender.onConnected()
+            !wasConnected && isConnected -> {
+                sender.onConnected()
+            }
 
             // Unexpected or requested: local held state is cleared; nothing is replayed later.
-            wasConnected && !isConnected -> sender.onDisconnected()
+            wasConnected && !isConnected -> {
+                sender.onDisconnected()
+                recognizer.cancel()
+            }
 
-            isConnected && e is SessionEvent.ProtocolChanged -> sender.setProtocolMode(new.protocolMode)
+            isConnected && e is SessionEvent.ProtocolChanged -> {
+                sender.setProtocolMode(new.protocolMode)
+            }
         }
     }
 
@@ -200,7 +244,7 @@ class HidSessionController(
             return
         }
         dispatch(SessionEvent.StartRequested())
-        registerReceivers()
+        broadcasts.register()
         val requested = adapter.getProfileProxy(context, proxyListener, BluetoothProfile.HID_DEVICE)
         log.log(Category.BLUETOOTH) { "getProfileProxy(HID_DEVICE) returned $requested" }
         if (!requested) {
@@ -478,10 +522,16 @@ class HidSessionController(
         proxy = null
         host = null
         simulatedSink = null
-        unregisterReceivers()
+        broadcasts.unregister()
     }
 
     // --- report delivery --------------------------------------------------------------------
+
+    private fun logGesture(e: GestureEvent) {
+        // Moves and scroll steps are too frequent to log; the reports they produce are logged.
+        if (e is GestureEvent.Move || e is GestureEvent.Scroll) return
+        log.log(Category.GESTURE) { e.toString() }
+    }
 
     private fun deliver(report: HidReport): Boolean {
         simulatedSink?.let { return it.send(report) }
@@ -510,58 +560,15 @@ class HidSessionController(
             }
     }
 
-    private val receiver =
-        object : BroadcastReceiver() {
-            override fun onReceive(
-                c: Context,
-                intent: Intent,
-            ) {
-                when (intent.action) {
-                    BluetoothAdapter.ACTION_STATE_CHANGED -> onAdapterState(intent)
-                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> onBondState(intent)
-                }
-            }
-        }
-
-    private fun onAdapterState(intent: Intent) {
-        val st = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
-        if (st == BluetoothAdapter.STATE_TURNING_OFF || st == BluetoothAdapter.STATE_OFF) {
-            engine.post {
-                log.log(Category.BLUETOOTH) { "Bluetooth turning off" }
-                dispatch(SessionEvent.AdapterOff)
-            }
-        }
-    }
-
-    private fun onBondState(intent: Intent) {
-        val device = intent.bluetoothDevice() ?: return
-        val bond = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR)
-        engine.post {
-            log.log(Category.BLUETOOTH) { "bond state ${device.address} -> $bond" }
-            val registered = state.value.phase in setOf(Phase.REGISTERED, Phase.CONNECTING, Phase.CONNECTED)
-            when (bond) {
-                BluetoothDevice.BOND_BONDED -> if (registered) hostStore.markHidPaired(device.address)
-                BluetoothDevice.BOND_NONE -> hostStore.forget(device.address)
-            }
-            refreshHostsOnEngine()
-        }
-    }
-
-    private fun registerReceivers() {
-        if (receiversRegistered) return
-        val filter =
-            IntentFilter().apply {
-                addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
-                addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-            }
-        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
-        receiversRegistered = true
-    }
-
-    private fun unregisterReceivers() {
-        if (!receiversRegistered) return
-        context.unregisterReceiver(receiver)
-        receiversRegistered = false
+    private fun onBondChanged(
+        address: String,
+        bonded: Boolean,
+    ) {
+        log.log(Category.BLUETOOTH) { "bond ${if (bonded) "created" else "removed"}: $address" }
+        val registered = state.value.phase in setOf(Phase.REGISTERED, Phase.CONNECTING, Phase.CONNECTED)
+        if (bonded && registered) hostStore.markHidPaired(address)
+        if (!bonded) hostStore.forget(address)
+        refreshHostsOnEngine()
     }
 
     // --- helpers ----------------------------------------------------------------------------
@@ -601,14 +608,6 @@ private fun Int.toLinkState(): LinkState =
         BluetoothProfile.STATE_CONNECTED -> LinkState.CONNECTED
         BluetoothProfile.STATE_DISCONNECTING -> LinkState.DISCONNECTING
         else -> LinkState.DISCONNECTED
-    }
-
-private fun Intent.bluetoothDevice(): BluetoothDevice? =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
-    } else {
-        @Suppress("DEPRECATION")
-        getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
     }
 
 private fun HidReply.describe(): String =
