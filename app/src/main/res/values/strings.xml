@@ -16,7 +16,6 @@
 
     <!-- Connection screen -->
     <string name="connection_title">Mobile TrackPad</string>
-    <string name="connection_intro">Use this phone as a Bluetooth mouse for your computer. No software is needed on the computer.</string>
     <string name="action_enable">Enable trackpad</string>
     <string name="action_simulate">Start simulated computer (debug build)</string>
     <string name="action_make_visible">Make phone visible for pairing</string>
@@ -31,6 +30,7 @@
     <string name="status_connected">Connected to %1$s</string>
     <string name="status_disconnecting">Disconnecting…</string>
     <string name="status_stopping">Stopping…</string>
+    <string name="simulated_computer_name">simulated computer</string>
     <string name="status_simulated">Simulated computer (debug build). Reports are recorded, not sent.</string>
     <string name="protocol_mode_report">Report mode</string>
     <string name="protocol_mode_boot">Boot mode (limited: no scrolling, media keys or buttons 4–5)</string>
@@ -38,13 +38,10 @@
     <string name="permission_heading">Permission needed</string>
     <string name="permission_rationale">To act as a Bluetooth mouse, Mobile TrackPad needs the Nearby devices permission. It is used only to talk to computers you pair with and to make the phone visible during pairing. Notifications are optional: they show a Stop button while the trackpad is active.</string>
 
-    <string name="pairing_heading">How to pair</string>
     <string name="pairing_steps">1. Keep this screen open with the trackpad enabled.\n2. Tap “Make phone visible for pairing”.\n3. On the computer, open Bluetooth settings and add a new device. Choose this phone.\n4. Confirm the pairing code on both devices if asked.\n\nPair only after enabling the trackpad. If this phone was paired with the computer before, remove the pairing on both the phone and the computer first, then pair again.</string>
 
-    <string name="hosts_heading">Paired devices</string>
     <string name="hosts_empty">No paired devices. Pair the phone from the computer’s Bluetooth settings.</string>
     <string name="hosts_need_permission">Grant the Nearby devices permission to see paired devices.</string>
-    <string name="host_flag_ready">Paired while the trackpad was enabled.</string>
     <string name="host_flag_maybe_repair">Paired before the trackpad was enabled. If connecting fails, remove the pairing on both devices and pair again.</string>
     <string name="host_flag_needs_repair">This computer removed the trackpad. Remove the pairing on both devices and pair again.</string>
     <string name="host_flag_not_computer">Not identified as a computer.</string>
@@ -78,6 +75,30 @@
     <string name="problem_host_unplugged_title">Computer removed the trackpad</string>
     <string name="problem_host_unplugged_body">The computer ended the virtual cable, which usually means it removed this device. Remove the pairing on the phone too, then pair again. The app will not reconnect automatically.</string>
     <string name="problem_detail">Technical detail: %1$s</string>
+
+    <!-- Connection screen: guided layout -->
+    <string name="steps_heading">Get started</string>
+    <string name="step_enable_title">Enable the trackpad</string>
+    <string name="step_enable_body">The phone registers as a Bluetooth mouse and keyboard.</string>
+    <string name="step_pair_title">Pair your computer</string>
+    <string name="step_pair_body">Only needed once. Pair from the computer’s Bluetooth settings while the trackpad is enabled.</string>
+    <string name="step_connect_title">Connect</string>
+    <string name="step_connect_body">Choose your computer below.</string>
+    <string name="step_done">Done</string>
+    <string name="how_to_pair_show">How to pair</string>
+    <string name="how_to_pair_hide">Hide pairing steps</string>
+    <string name="action_connect_to">Connect to %1$s</string>
+    <string name="computers_heading">Your computers</string>
+    <string name="tools_heading">Tools</string>
+    <string name="chip_connected">Connected</string>
+    <string name="chip_connecting">Connecting</string>
+    <string name="chip_ready">Ready</string>
+    <string name="chip_check_pairing">Check pairing</string>
+    <string name="chip_repair">Re-pair needed</string>
+    <string name="chip_other_device">Other device</string>
+    <string name="status_hint_idle">Tap Enable trackpad to start.</string>
+    <string name="status_hint_registered">Connect to a computer, or pair a new one.</string>
+    <string name="status_hint_connected">Open the trackpad to start controlling the computer.</string>
 
     <!-- Trackpad screen -->
     <string name="action_open_trackpad">Open trackpad</string>
@@ -248,6 +269,9 @@
     <string name="trackpad_drag_locked">Drag lock: button held</string>
     <string name="trackpad_release">Release</string>
     <string name="trackpad_reconnecting">Reconnecting…</string>
+    <string name="trackpad_disconnected_title">Not connected</string>
+    <string name="trackpad_disconnected_body">The computer is not connected. Reconnect, or go back to choose another computer.</string>
+    <string name="action_reconnect">Reconnect</string>
 
     <!-- Onboarding -->
     <string name="onboarding_title_welcome">Welcome</string>

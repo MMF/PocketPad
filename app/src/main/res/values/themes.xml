@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Window theme only; Compose draws the UI with Material 3. -->
-    <style name="Theme.MobileTrackPad" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@android:color/black</item>
-    </style>
+    <!-- Window theme only (what shows before Compose draws); Compose draws the UI with Material 3. -->
+    <style name="Theme.MobileTrackPad" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

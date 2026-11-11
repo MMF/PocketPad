@@ -9,6 +9,8 @@ core-ktx = "1.18.0"
 activity-compose = "1.11.0"
 compose = "1.12.1"
 material3 = "1.4.0"
+# Material icons are frozen at 1.7.x; core set only (no extended icons).
+material-icons = "1.7.8"
 lifecycle = "2.10.0"
 datastore = "1.1.7"
 junit = "4.13.2"
@@ -29,6 +31,7 @@ compose-foundation = { module = "androidx.compose.foundation:foundation", versio
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "material-icons" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }

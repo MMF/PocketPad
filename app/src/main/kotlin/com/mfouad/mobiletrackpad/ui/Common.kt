@@ -114,3 +114,14 @@ fun ProtocolMode.labelRes(): Int =
         ProtocolMode.REPORT -> R.string.protocol_mode_report
         ProtocolMode.BOOT -> R.string.protocol_mode_boot
     }
+
+/** Name of the session's host for status text: the bonded name, or a label for the simulator. */
+@Composable
+fun hostDisplayName(
+    state: com.mfouad.mobiletrackpad.session.SessionState,
+    hosts: List<com.mfouad.mobiletrackpad.bluetooth.BondedHost>,
+): String =
+    when {
+        state.simulated -> stringResource(R.string.simulated_computer_name)
+        else -> hosts.firstOrNull { it.address == state.hostAddress }?.name ?: state.hostAddress.orEmpty()
+    }

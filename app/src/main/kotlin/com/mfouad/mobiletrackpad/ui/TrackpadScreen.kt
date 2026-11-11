@@ -4,6 +4,10 @@ import android.app.Activity
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -20,13 +24,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.systemGestureExclusion
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -53,8 +63,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mfouad.mobiletrackpad.AppGraph
 import com.mfouad.mobiletrackpad.R
+import com.mfouad.mobiletrackpad.data.HostRecords
 import com.mfouad.mobiletrackpad.hid.MouseButton
 import com.mfouad.mobiletrackpad.input.MotionEventFrames
+import com.mfouad.mobiletrackpad.session.Phase
 import com.mfouad.mobiletrackpad.settings.Settings
 
 const val TRACKPAD_SURFACE_TAG = "trackpad-surface"
@@ -83,6 +95,9 @@ fun TrackpadScreen(
     val dragLocked by controller.input.dragLocked.collectAsStateWithLifecycle()
     val reconnect by controller.reconnect.collectAsStateWithLifecycle()
 
+    var touched by rememberSaveable { mutableStateOf(false) }
+    val records by AppGraph.hostStore.records.collectAsStateWithLifecycle(HostRecords())
+
     ImmersiveMode()
     PauseWhenNotVisible()
     BatterySaverWindow(settings.batterySaver)
@@ -105,15 +120,16 @@ fun TrackpadScreen(
                 .testTag(TRACKPAD_SURFACE_TAG)
                 .semantics { contentDescription = surfaceDescription }
                 .pointerInteropFilter { ev ->
-                    if (ev.actionMasked == MotionEvent.ACTION_DOWN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+                        touched = true
                         // Deliver touch as it arrives instead of once per frame.
-                        view.requestUnbufferedDispatch(ev)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) view.requestUnbufferedDispatch(ev)
                     }
                     controller.input.onTouchFrames(MotionEventFrames.from(ev))
                     true
                 },
         )
-        val hostName = hosts.firstOrNull { it.address == state.hostAddress }?.name ?: state.hostAddress.orEmpty()
+        val hostName = hostDisplayName(state, hosts)
         Row(
             Modifier.fillMaxWidth().safeDrawingPadding().padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -138,6 +154,15 @@ fun TrackpadScreen(
             )
             TextButton(onClick = onStop) { Text(stringResource(R.string.action_stop)) }
         }
+        if (!state.isConnected) {
+            DisconnectedPanel(
+                reconnecting = reconnect != null,
+                canReconnect = state.phase == Phase.REGISTERED && records.lastHost != null && !state.simulated,
+                onReconnect = { records.lastHost?.let(controller::connect) },
+                onBack = onBack,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
         Column(
             Modifier
                 .align(Alignment.BottomCenter)
@@ -148,19 +173,69 @@ fun TrackpadScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (dragLocked) DragLockBanner(onRelease = controller.input::releaseDragLock)
-            if (!settings.onScreenButtons) {
+            // The hint helps until the first touch, then gets out of the way.
+            AnimatedVisibility(
+                visible = !touched && state.isConnected,
+                enter = EnterTransition.None,
+                exit = if (settings.batterySaver) ExitTransition.None else fadeOut(),
+            ) {
                 Text(
                     text = stringResource(R.string.trackpad_hint),
                     color = SubtleText,
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
                 )
-            } else {
-                MouseButtons(leftHanded = settings.leftHanded)
             }
+            if (settings.onScreenButtons) MouseButtons(leftHanded = settings.leftHanded)
         }
     }
 }
+
+/** Shown over the surface when no computer is connected, so a black screen is never a mystery. */
+@Composable
+private fun DisconnectedPanel(
+    reconnecting: Boolean,
+    canReconnect: Boolean,
+    onReconnect: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .padding(32.dp)
+            .background(PanelColor, RoundedCornerShape(16.dp))
+            .padding(24.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            stringResource(if (reconnecting) R.string.trackpad_reconnecting else R.string.trackpad_disconnected_title),
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        if (reconnecting) {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+        } else {
+            Text(
+                stringResource(R.string.trackpad_disconnected_body),
+                color = SubtleText,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (canReconnect &&
+                !reconnecting
+            ) {
+                Button(onClick = onReconnect) { Text(stringResource(R.string.action_reconnect)) }
+            }
+            OutlinedButton(onClick = onBack) { Text(stringResource(R.string.action_back)) }
+        }
+    }
+}
+
+private val PanelColor = Color(0xFF1E1E1E)
 
 @Composable
 private fun DragLockBanner(onRelease: () -> Unit) {

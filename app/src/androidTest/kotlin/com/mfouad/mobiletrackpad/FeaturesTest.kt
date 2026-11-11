@@ -3,6 +3,7 @@ package com.mfouad.mobiletrackpad
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -41,6 +42,12 @@ class FeaturesTest {
 
     private fun click(id: Int) {
         rule.onNodeWithText(rule.string(id)).performScrollTo().performClick()
+        rule.waitForIdle()
+    }
+
+    /** Settings is an icon button in the top app bar; find it by its accessibility label. */
+    private fun openSettings() {
+        rule.onNodeWithContentDescription(rule.string(R.string.action_settings)).performClick()
         rule.waitForIdle()
     }
 
@@ -97,7 +104,7 @@ class FeaturesTest {
 
     @Test
     fun setupGuideWalksThroughAllPagesAndRunsTheCheck() {
-        click(R.string.action_settings)
+        openSettings()
         click(R.string.settings_setup_guide)
         assertTrue(rule.exists(rule.string(R.string.onboarding_title_welcome)))
         click(R.string.action_next)
@@ -118,7 +125,7 @@ class FeaturesTest {
 
     @Test
     fun reverseScrollSettingIsSavedAndApplied() {
-        click(R.string.action_settings)
+        openSettings()
         click(R.string.settings_reverse_scroll)
         rule.waitFor("saved") { runBlocking { store.settings.first().reverseScroll } }
         rule.activity.onBackPressedDispatcher.let { rule.runOnUiThread { it.onBackPressed() } }
@@ -206,7 +213,7 @@ class FeaturesTest {
 
     @Test
     fun mappingEditorChangeIsSavedAndUsed() {
-        click(R.string.action_settings)
+        openSettings()
         click(R.string.settings_mappings)
         clickText(HostProfiles.default(HostProfiles.CUSTOM).name)
         click(R.string.slot_swipe_right)
@@ -233,6 +240,18 @@ class FeaturesTest {
     }
 
     // --- trackpad extras ------------------------------------------------------------------------
+
+    @Test
+    fun trackpadExplainsWhenTheComputerIsNotConnected() {
+        startSimulatedAndOpenTrackpad()
+        assertTrue(!rule.exists(rule.string(R.string.trackpad_disconnected_title)))
+        controller.stop()
+        rule.waitFor("disconnected panel") { rule.exists(rule.string(R.string.trackpad_disconnected_title)) }
+        // A simulated session cannot reconnect, so only Back is offered.
+        assertTrue(!rule.exists(rule.string(R.string.action_reconnect)))
+        rule.onAllNodesWithText(rule.string(R.string.action_back))[1].performClick()
+        rule.waitFor("main screen") { rule.exists(rule.string(R.string.action_enable)) }
+    }
 
     @Test
     fun onScreenButtonsHoldUntilReleased() {
