@@ -192,9 +192,12 @@ class GestureRecognizerTest {
             listOf(ButtonDown(PRIMARY), ButtonUp(PRIMARY), ButtonDown(PRIMARY), ButtonUp(PRIMARY)),
             clicks(),
         )
-        // The drag's button goes down before the movement and up after it.
+        // The pointer moves before the drag's press, so the host does not see a double-click,
+        // keeps moving while the button is held, and the button goes up at the end.
+        val firstUp = events.indexOf(ButtonUp(PRIMARY))
         val downIndex = events.indexOfLast { it == ButtonDown(PRIMARY) }
         val upIndex = events.lastIndexOf(ButtonUp(PRIMARY))
+        assertTrue(events.subList(firstUp, downIndex).any { it is Move })
         assertTrue(events.subList(downIndex, upIndex).any { it is Move })
         assertNear(80f, sumMove().first)
     }

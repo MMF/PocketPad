@@ -268,6 +268,10 @@ class GestureRecognizer(
         val travel = p.pt() - start.pt()
         if (travel.length <= config.tapSlopPx) return
         moved = true
+        // Move before pressing: the first tap of tap-and-drag already sent a click, and a press at
+        // the same spot soon after it is a double-click to the host (macOS zooms a window when its
+        // title bar is double-clicked). Moving first places the press away from that click.
+        emit(GestureEvent.Move(travel.x, travel.y))
         mode =
             if (dragArmed || lockedSession) {
                 pressButton()
@@ -276,7 +280,6 @@ class GestureRecognizer(
             } else {
                 Mode.POINTER
             }
-        emit(GestureEvent.Move(travel.x, travel.y))
     }
 
     private fun emitPrimaryDelta() {
