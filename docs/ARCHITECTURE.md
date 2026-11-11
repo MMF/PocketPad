@@ -1,6 +1,6 @@
 # Architecture
 
-Mobile TrackPad turns an Android phone's touchscreen into a trackpad by presenting the phone as
+PocketPad turns an Android phone's touchscreen into a trackpad by presenting the phone as
 a standard Bluetooth Classic HID mouse and keyboard. The computer needs no companion software.
 
 This document describes the planned design. No code exists yet and nothing has been run on
@@ -29,7 +29,7 @@ Report formats and HID request handling are in [HID.md](HID.md).
 | `:hid` | Kotlin/JVM | Descriptor, report encoders, action model, host profiles, event-to-report mapping, ordered sender, `OutputSink`. Depends on `:gesture` for event types. |
 | `:app` | Android application | Packages `bluetooth/`, `service/`, `data/`, `ui/`. |
 
-applicationId and namespace: `com.mfouad.mobiletrackpad`. minSdk 28, compile and target SDK 37.
+applicationId and namespace: `com.mfouad.pocketpad`. minSdk 28, compile and target SDK 37.
 
 ```
 MotionEvent ─▶ ui/ TrackpadSurface ─▶ PointerFrame
@@ -234,7 +234,7 @@ that moment, the host may cache the phone without it.
   `Registered` state.
 - The app records hosts that bonded or connected while it was registered. Bonded devices whose
   Bluetooth class is "computer" and that are not in that record are flagged "paired before
-  Mobile TrackPad was enabled — may need re-pairing".
+  PocketPad was enabled — may need re-pairing".
 - The fix offered is always the same: remove the pairing on both the phone and the computer,
   enable the trackpad, then pair again.
 

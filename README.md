@@ -1,4 +1,4 @@
-# Mobile TrackPad
+# PocketPad
 
 An Android app that turns a phone's touchscreen into a trackpad for a computer. The phone
 presents itself as a standard Bluetooth mouse and keyboard, so the computer needs no extra
@@ -122,14 +122,16 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ## Pairing
 
 **Order matters.** Computers remember what a Bluetooth device offered when they paired. If the
-phone was paired before Mobile TrackPad was enabled, the computer may not know it is a mouse.
+phone was paired before PocketPad was enabled, the computer may not know it is a mouse.
 
 On the phone:
 
-1. Open Mobile TrackPad and tap **Enable trackpad**. Wait for "Ready. Waiting for a computer."
+1. Open PocketPad and tap **Enable trackpad**. Wait for "Ready. Waiting for a computer."
 2. Tap **Make phone visible for pairing** and allow it (the phone stays visible for 2 minutes).
 
-On the computer:
+On the computer, look for the **phone's Bluetooth name** (for example "Galaxy S25 Ultra"), not
+"PocketPad": the name a computer lists is the phone's own name, set in the phone's Bluetooth
+settings, and the app does not change it.
 
 - **macOS:** System Settings → Bluetooth. Under Nearby Devices, click **Connect** next to the
   phone and confirm the code on both devices. macOS may open the Keyboard Setup Assistant;

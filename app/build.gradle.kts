@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.mfouad.mobiletrackpad"
+    namespace = "com.mfouad.pocketpad"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.mfouad.mobiletrackpad"
+        applicationId = "com.mfouad.pocketpad"
         minSdk = 28
         targetSdk = 37
         versionCode = 1

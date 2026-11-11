@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Mobile TrackPad</string>
+    <string name="app_name">PocketPad</string>
 
     <!-- Common actions -->
     <string name="action_stop">Stop</string>
@@ -15,7 +15,7 @@
     <string name="action_grant_permission">Grant permission</string>
 
     <!-- Connection screen -->
-    <string name="connection_title">Mobile TrackPad</string>
+    <string name="connection_title">PocketPad</string>
     <string name="action_enable">Enable trackpad</string>
     <string name="action_simulate">Start simulated computer (debug build)</string>
     <string name="action_make_visible">Make phone visible for pairing</string>
@@ -36,7 +36,7 @@
     <string name="protocol_mode_boot">Boot mode (limited: no scrolling, media keys or buttons 4–5)</string>
 
     <string name="permission_heading">Permission needed</string>
-    <string name="permission_rationale">To act as a Bluetooth mouse, Mobile TrackPad needs the Nearby devices permission. It is used only to talk to computers you pair with and to make the phone visible during pairing. Notifications are optional: they show a Stop button while the trackpad is active.</string>
+    <string name="permission_rationale">To act as a Bluetooth mouse, PocketPad needs the Nearby devices permission. It is used only to talk to computers you pair with and to make the phone visible during pairing. Notifications are optional: they show a Stop button while the trackpad is active.</string>
 
     <string name="pairing_steps">1. Keep this screen open with the trackpad enabled.\n2. Tap “Make phone visible for pairing”.\n3. On the computer, open Bluetooth settings and add a new device. Choose this phone.\n4. Confirm the pairing code on both devices if asked.\n\nPair only after enabling the trackpad. If this phone was paired with the computer before, remove the pairing on both the phone and the computer first, then pair again.</string>
 
@@ -133,7 +133,7 @@
     <string name="diagnostics_share">Share</string>
     <string name="diagnostics_clear">Clear</string>
     <string name="diagnostics_copied">Log copied</string>
-    <string name="diagnostics_share_subject">Mobile TrackPad diagnostics</string>
+    <string name="diagnostics_share_subject">PocketPad diagnostics</string>
 
     <!-- Navigation -->
     <string name="action_settings">Settings</string>
@@ -260,7 +260,7 @@
     <string name="reconnect_status">Connection lost. Reconnecting to %1$s (attempt %2$d of %3$d)…</string>
     <string name="reconnect_cancel">Stop reconnecting</string>
     <string name="exit_notice_title">Stopped from Android settings</string>
-    <string name="exit_notice_body">Mobile TrackPad was stopped by Android’s Task Manager or app settings while the trackpad was active. The app gets no warning when this happens, so it could not release held buttons or disconnect cleanly. If anything seems stuck on the computer, click once with its own mouse or trackpad.</string>
+    <string name="exit_notice_body">PocketPad was stopped by Android’s Task Manager or app settings while the trackpad was active. The app gets no warning when this happens, so it could not release held buttons or disconnect cleanly. If anything seems stuck on the computer, click once with its own mouse or trackpad.</string>
     <string name="action_dismiss">Dismiss</string>
 
     <!-- Trackpad extras -->
@@ -275,7 +275,7 @@
 
     <!-- Onboarding -->
     <string name="onboarding_title_welcome">Welcome</string>
-    <string name="onboarding_body_welcome">Mobile TrackPad turns this phone into a Bluetooth mouse for your computer. The computer needs no extra software.\n\nIt works as a standard mouse and keyboard. Pinch, rotate and three-finger gestures are sent as keyboard shortcuts, so they are not the same as your computer’s own trackpad gestures, and what a shortcut does depends on the computer and the app.</string>
+    <string name="onboarding_body_welcome">PocketPad turns this phone into a Bluetooth mouse for your computer. The computer needs no extra software.\n\nIt works as a standard mouse and keyboard. Pinch, rotate and three-finger gestures are sent as keyboard shortcuts, so they are not the same as your computer’s own trackpad gestures, and what a shortcut does depends on the computer and the app.</string>
     <string name="onboarding_title_permissions">Permissions</string>
     <string name="onboarding_body_permissions">The app needs the Nearby devices permission to act as a Bluetooth mouse and to make the phone visible while you pair. Notifications are optional: they show a Stop button while the trackpad is on. The app has no internet access.</string>
     <string name="onboarding_permissions_granted">Nearby devices permission granted.</string>

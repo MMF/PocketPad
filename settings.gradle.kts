@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Mobile-TrackPad"
+rootProject.name = "PocketPad"
 
 include(":gesture", ":hid", ":app")

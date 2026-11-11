@@ -30,7 +30,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MobileTrackPad">
+        android:theme="@style/Theme.PocketPad">
         <activity
             android:name=".MainActivity"
             android:exported="true"

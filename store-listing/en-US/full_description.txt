@@ -1,0 +1,28 @@
+PocketPad turns your Android phone into a Bluetooth mouse and trackpad for your computer. The phone connects as a standard Bluetooth mouse, so there is nothing to install on the computer: pair it once in the computer's Bluetooth settings and start pointing.
+
+TRACKPAD GESTURES
+• Move the pointer with one finger
+• Tap to click, double-tap, and tap-then-drag to move windows and files
+• Two-finger tap for right click, three-finger tap for middle click
+• Two-finger scrolling, vertical and horizontal, with momentum
+• Pinch to zoom
+• Three-finger swipes for shortcuts
+• Drag lock and optional on-screen left and right buttons
+
+MADE FOR YOUR MAC
+• A macOS gesture profile: pinch zooms with Cmd + and Cmd -, three-finger swipes open Mission Control and App Exposé and switch desktops
+• Reconnects automatically if the connection drops
+
+SETTINGS
+Pointer speed, reverse scrolling, tap to click, drag lock, on-screen buttons, and a battery-saving mode that dims the trackpad screen and turns off vibration.
+
+PRIVATE BY DESIGN
+• No ads, no accounts, no analytics
+• No internet permission: the app cannot send data anywhere
+• An optional diagnostics log stays on your phone unless you choose to share it
+
+GOOD TO KNOW
+• Tested so far with a Samsung Galaxy S25 Ultra and a Mac running macOS. Windows and Linux use the same standard Bluetooth mouse support, and the app includes gesture profiles for them, but they have not been tested yet.
+• Your phone must support the Bluetooth HID device profile (Android 9 or later). Some phone models do not include it.
+• Gestures such as pinch and three-finger swipes are sent as keyboard shortcuts, not as native multitouch, so what they do depends on the computer and the app you are using.
+• PocketPad is a mouse, not a keyboard: there is no typing feature.

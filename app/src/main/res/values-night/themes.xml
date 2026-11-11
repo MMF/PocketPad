@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Dark window theme so launch matches the system dark setting. -->
-    <style name="Theme.MobileTrackPad" parent="android:Theme.Material.NoActionBar" />
+    <style name="Theme.PocketPad" parent="android:Theme.Material.NoActionBar" />
 </resources>

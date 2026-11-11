@@ -30,11 +30,17 @@ Passed to `BluetoothHidDeviceAppSdpSettings(name, description, provider, subclas
 
 | Field | Value | Basis |
 |---|---|---|
-| `name` | `Mobile TrackPad` | max 50 bytes **[DOC]** |
-| `description` | `Phone trackpad` | max 50 bytes **[DOC]** |
-| `provider` | `Mobile TrackPad` | max 50 bytes **[DOC]** |
+| `name` | `PocketPad` | max 50 bytes **[DOC]** |
+| `description` | `Bluetooth mouse` | max 50 bytes **[DOC]** |
+| `provider` | `PocketPad` | max 50 bytes **[DOC]** |
 | `subclass` | `SUBCLASS1_COMBO` (0xC0) | "combo keyboard and mouse subclass" **[DOC]**; bits 7–6 = 11 is Combo keyboard/pointing in BT HID Table 5.4/5.5 **[SPEC]** |
 | `descriptors` | the 166 bytes in section 3 | max 2048 bytes **[DOC]** |
+
+These strings are the HID service's name, not the name computers list during pairing; that is
+the phone's own Bluetooth name, which the app never changes. Hosts store the SDP record when they
+pair, so a computer paired before the rename from "Mobile TrackPad" to "PocketPad" (0.1.0
+development builds) may keep showing the old service name. The descriptor and report IDs did not
+change, so such a computer keeps working and does not need to pair again.
 | QoS in/out | `null` | optional **[DOC]** |
 
 The Android stack, not the app, sets the remaining SDP attributes. On AOSP `main` they are
