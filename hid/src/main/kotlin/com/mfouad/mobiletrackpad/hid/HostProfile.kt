@@ -1,15 +1,21 @@
 package com.mfouad.mobiletrackpad.hid
 
-/** Gestures whose action is chosen by the host profile. Clicks and scrolling are fixed. */
-enum class GestureSlot {
-    PINCH_OUT,
-    PINCH_IN,
-    ROTATE_CLOCKWISE,
-    ROTATE_COUNTERCLOCKWISE,
-    SWIPE3_UP,
-    SWIPE3_DOWN,
-    SWIPE3_LEFT,
-    SWIPE3_RIGHT,
+/**
+ * Gestures whose action is chosen by the host profile. Clicks and scrolling are fixed.
+ *
+ * [key] is the stored identifier. It never changes, independent of the constant's name.
+ */
+enum class GestureSlot(
+    val key: String,
+) {
+    PINCH_OUT("pinch_out"),
+    PINCH_IN("pinch_in"),
+    ROTATE_CLOCKWISE("rotate_cw"),
+    ROTATE_COUNTERCLOCKWISE("rotate_ccw"),
+    SWIPE3_UP("swipe3_up"),
+    SWIPE3_DOWN("swipe3_down"),
+    SWIPE3_LEFT("swipe3_left"),
+    SWIPE3_RIGHT("swipe3_right"),
 }
 
 /**

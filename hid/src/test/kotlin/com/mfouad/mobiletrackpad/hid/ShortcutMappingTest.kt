@@ -220,18 +220,32 @@ class ShortcutMappingTest {
                 Action.Sequence(listOf(Action.Consumer(ConsumerUsage.MUTE), Action.MouseClick(MouseButton.PRIMARY))),
             )
         actions.forEach { assertEquals(it, ActionCodec.decode(ActionCodec.encode(it)), ActionCodec.encode(it)) }
-        assertEquals("keys LEFT_CTRL,LEFT_SHIFT 2E,04", ActionCodec.encode(actions[1]))
+        assertEquals("keys 03 2E,04", ActionCodec.encode(actions[1]))
+        // Stored values are HID masks and usages, not enum names (which R8 may rename).
+        assertEquals("click 10", ActionCodec.encode(actions[0]))
+        assertEquals("modwheel 01 -1 0", ActionCodec.encode(actions[5]))
+    }
+
+    @Test
+    fun storedProfileFormatIsStable() {
+        val p =
+            HostProfile(
+                "custom",
+                "Mine",
+                mapOf(GestureSlot.SWIPE3_UP to Action.KeyChord(setOf(Modifier.LEFT_GUI), listOf(KeyUsage.TAB))),
+            )
+        assertEquals("name=Mine\nswipe3_up=keys 08 2B\n", ProfileCodec.encode(p))
     }
 
     @Test
     fun damagedTextDecodesSafely() {
-        listOf("", "nonsense", "keys", "consumer ZZ", "click NOPE", "keys LEFT_CTRL 100").forEach {
+        listOf("", "nonsense", "keys", "consumer ZZ", "click 40", "click ZZ", "keys 01 100", "keys 1FF 04").forEach {
             assertNull(ActionCodec.decode(it), it)
         }
         val p =
             ProfileCodec.decode(
                 "x",
-                "name=Mine\nPINCH_OUT=garbage\nNOT_A_SLOT=click PRIMARY\nSWIPE3_UP=consumer E2",
+                "name=Mine\npinch_out=garbage\nnot_a_slot=click 01\nswipe3_up=consumer E2",
                 "X",
             )
         assertEquals(HostProfile("x", "Mine", mapOf(GestureSlot.SWIPE3_UP to Action.Consumer(ConsumerUsage.MUTE))), p)

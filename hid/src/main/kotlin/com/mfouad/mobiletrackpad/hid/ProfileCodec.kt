@@ -3,11 +3,14 @@ package com.mfouad.mobiletrackpad.hid
 /**
  * Plain-text encoding of actions and profiles for storage. One action per string:
  *
- * - `click PRIMARY`
- * - `keys LEFT_CTRL,LEFT_SHIFT 2E,04` (modifiers or `-`, then hex key usages or `-`)
+ * - `click 08` (mouse button bit mask, hex)
+ * - `keys 03 2E,04` (modifier bit mask, then hex key usages or `-`)
  * - `consumer E9` (hex usage)
- * - `modwheel LEFT_CTRL 1 0` (modifiers, wheel, pan)
+ * - `modwheel 01 1 0` (modifier bit mask, wheel, pan)
  * - steps of a sequence joined by ` ; `
+ *
+ * Only HID values (bit masks, usage IDs) and fixed keys are stored, never Kotlin enum names,
+ * so release-build minification cannot change the stored format.
  *
  * Decoding never throws: anything unreadable decodes to null (no action).
  */
@@ -18,7 +21,7 @@ object ActionCodec {
 
     fun encode(action: Action): String =
         when (action) {
-            is Action.MouseClick -> "click ${action.button.name}"
+            is Action.MouseClick -> "click ${hex(action.button.mask)}"
             is Action.KeyChord -> "keys ${mods(action.modifiers)} ${hexList(action.keys)}"
             is Action.Consumer -> "consumer ${hex(action.usage)}"
             is Action.ModifierWheel -> "modwheel ${mods(action.modifiers)} ${action.wheel} ${action.pan}"
@@ -40,7 +43,8 @@ object ActionCodec {
         val f = text.split(' ').filter { it.isNotEmpty() }
         return when (f.firstOrNull()) {
             "click" -> {
-                Action.MouseClick(MouseButton.valueOf(f[1]))
+                val mask = f[1].toInt(HEX)
+                MouseButton.entries.firstOrNull { it.mask == mask }?.let { Action.MouseClick(it) }
             }
 
             "keys" -> {
@@ -61,17 +65,13 @@ object ActionCodec {
         }
     }
 
-    private fun mods(m: Set<Modifier>) =
-        if (m.isEmpty()) {
-            NONE
-        } else {
-            Modifier.entries
-                .filter {
-                    it in m
-                }.joinToString(",") { it.name }
-        }
+    private fun mods(m: Set<Modifier>) = hex(Modifier.maskOf(m))
 
-    private fun parseMods(s: String) = if (s == NONE) emptySet() else s.split(',').map { Modifier.valueOf(it) }.toSet()
+    private fun parseMods(s: String): Set<Modifier> {
+        val mask = s.toInt(HEX)
+        require(mask in 0..BYTE_MASK)
+        return Modifier.entries.filter { it.mask and mask != 0 }.toSet()
+    }
 
     private fun hex(v: Int) = v.toString(HEX).uppercase().padStart(2, '0')
 
@@ -91,7 +91,7 @@ object ProfileCodec {
         buildString {
             appendLine("$NAME_KEY=${profile.name.replace('\n', ' ')}")
             GestureSlot.entries.forEach { slot ->
-                profile.mappings[slot]?.let { appendLine("${slot.name}=${ActionCodec.encode(it)}") }
+                profile.mappings[slot]?.let { appendLine("${slot.key}=${ActionCodec.encode(it)}") }
             }
         }
 
@@ -111,7 +111,7 @@ object ProfileCodec {
                 }
 
                 key.isNotEmpty() -> {
-                    val slot = GestureSlot.entries.firstOrNull { it.name == key }
+                    val slot = GestureSlot.entries.firstOrNull { it.key == key }
                     val action = ActionCodec.decode(value)
                     if (slot != null && action != null) mappings[slot] = action
                 }
