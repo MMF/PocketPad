@@ -436,12 +436,16 @@ as working on emulator or log evidence alone.
 1. Docs, scaffold, descriptor, encoders (report and boot mode), unit tests, CI. *Done.*
 2. Bluetooth registration, pairing guidance and pairing-order handling, connection, test
    movement, Diagnostics screen, stuck-input safety. *Done; confirmed on a real phone and Mac.*
-3. Trackpad surface, movement, taps, dragging, two-finger scrolling. *Built; automated and
-   emulator tests pass; real-device checks pending.*
-4. Pinch, rotate and three-finger mappings, host profiles, mapping editor. *Built; automated
-   and emulator tests pass; real-device checks pending.*
-5. Complete settings, onboarding, reconnection, accessibility, polish. *Built; automated and
-   emulator tests pass; real-device checks pending.*
+3. Trackpad surface, movement, taps, dragging, two-finger scrolling. *Done; confirmed on a real
+   phone and Mac. The real-device check found that tap-and-drag pressed the button before
+   moving, which macOS read as a double-click on title bars (zoom instead of drag); fixed by
+   moving first.*
+4. Pinch, rotate and three-finger mappings, host profiles, mapping editor. *Done; pinch and
+   three-finger swipes confirmed on a real phone and Mac with the macOS profile. Rotate and the
+   Windows, GNOME and KDE profiles are covered only by automated and emulator tests.*
+5. Complete settings, onboarding, reconnection, accessibility, polish. *Done; settings, drag
+   lock, on-screen buttons, reconnect after link loss and battery saving confirmed on a real
+   phone and Mac.*
 6. Research only: native multitouch HID feasibility. Microsoft lists USB, I²C and SPI as
    Precision Touchpad transports, not Bluetooth; changing the descriptor is not assumed to
    enable native gestures.
@@ -452,11 +456,12 @@ All need a physical Android phone and a computer.
 
 1. Does a foreground service keep HID registration alive with the screen off, on stock and
    manufacturer Android builds from 9 to 17?
-2. Is the composite descriptor accepted by Windows, macOS and Linux? (Details in HID.md §9.)
-3. Do hosts clear held keys and buttons when the link drops?
+2. Is the composite descriptor accepted by Windows, macOS and Linux? (Details in HID.md §9.) *macOS 27.2: yes, in report mode.*
+3. Do hosts clear held keys and buttons when the link drops? *macOS 27.2: yes.*
 4. What report rate is sustainable before the stack drops reports?
 5. Do hosts reconnect to the phone on their own after it re-registers, and does that interact
-   badly with the app's bounded reconnect?
+   badly with the app's bounded reconnect? *macOS 27.2 does not reconnect on its own; the
+   phone's reconnect worked.*
 6. Does the bonded-before-registration heuristic produce false warnings in practice?
 
 ## 15. Observed platform issues

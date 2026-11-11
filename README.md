@@ -5,10 +5,9 @@ presents itself as a standard Bluetooth mouse and keyboard, so the computer need
 software: you pair the phone in the computer's Bluetooth settings.
 
 > **Status: Milestones 1–5 built.** Bluetooth sessions, the trackpad, shortcut gestures, host
-> profiles, settings and onboarding exist. Bluetooth behaviour has been confirmed on one phone
-> and one Mac (see [Tested combinations](#tested-combinations)); the trackpad screen, shortcut
-> gestures and everything added in Milestones 4 and 5 have so far been verified only by
-> automated tests and on the emulator.
+> profiles, settings and onboarding exist. They have been confirmed on one phone and one Mac
+> (see [Tested combinations](#tested-combinations)). Windows and Linux computers, and other
+> phones, have not been tested yet.
 
 ## What it is and is not
 
@@ -152,7 +151,7 @@ been tried with this app.
 
 | Phone | Android | Computer | OS | Result |
 |---|---|---|---|---|
-| Samsung Galaxy S25 Ultra (SM-S938B) | 17 (API 37), build S938BXXSDDZJ1 | MacBook Pro (M4 Max) | macOS 27.2 (26B123) | Milestone 2 checks passed: pairing after enabling, connect from the phone, pointer movement, left and right click, vertical scroll, volume up and down, held button released on leaving the screen, on Stop, and when the link dropped. Known issue: turning Bluetooth off while enabled needs a phone restart (see below). Trackpad screen and later milestones not yet tested on this pair. |
+| Samsung Galaxy S25 Ultra (SM-S938B) | 17 (API 37), build S938BXXSDDZJ1 | MacBook Pro (M4 Max) | macOS 27.2 (26B123) | **Milestone 2:** pairing after enabling, connect from the phone, test movement, left and right click, vertical scroll, volume up and down, held button released on leaving the screen, on Stop, and when the link dropped. **Milestones 3–5 (macOS profile):** pointer movement (smooth, speed about right, no touches wrongly ignored), tap, double-tap, tap-and-drag (title bars and icons), resting finger does not click, two-finger tap right click, three-finger tap middle click, two-finger scroll vertical and horizontal with momentum, pinch zoom in Safari (Cmd + = / Cmd + -), three-finger swipes (Mission Control, App Exposé, next and previous space), pointer speed, reverse scroll and tap to click settings applied and kept after restart, drag lock, on-screen buttons, automatic reconnect after the Mac's Bluetooth was turned off and on, battery saving (dim, no vibration), and button released when leaving the app mid-drag. Not tested on this pair: rotate, other settings (scroll speed, left-handed layout, extra speed), other profiles. Known issue: turning Bluetooth off on the phone while enabled needs a phone restart (see below). |
 
 Entries are added only after a person has confirmed the result on real hardware.
 
