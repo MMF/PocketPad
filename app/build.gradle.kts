@@ -58,6 +58,7 @@ dependencies {
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit)
+    testImplementation(testFixtures(project(":gesture")))
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)

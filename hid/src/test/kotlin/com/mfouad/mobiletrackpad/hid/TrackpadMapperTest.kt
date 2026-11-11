@@ -102,10 +102,9 @@ class TrackpadMapperTest {
     }
 
     @Test
-    fun pinchRotateAndSwipeSendNothingYet() {
-        mapper.onEvent(GestureEvent.Pinch(0.2f))
-        mapper.onEvent(GestureEvent.Rotate(10f))
-        mapper.onEvent(GestureEvent.Swipe3(SwipeDirection.LEFT))
+    fun smallPinchAndRotateBelowOneStepSendNothing() {
+        mapper.onEvent(GestureEvent.Pinch(0.2f, start = true))
+        mapper.onEvent(GestureEvent.Rotate(10f, start = true))
         drain()
         assertTrue(reports.isEmpty())
     }

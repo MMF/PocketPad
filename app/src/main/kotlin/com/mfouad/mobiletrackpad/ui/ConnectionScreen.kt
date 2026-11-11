@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -25,7 +28,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -41,6 +46,8 @@ import com.mfouad.mobiletrackpad.R
 import com.mfouad.mobiletrackpad.bluetooth.BluetoothEnv
 import com.mfouad.mobiletrackpad.bluetooth.BondedHost
 import com.mfouad.mobiletrackpad.data.HostRecords
+import com.mfouad.mobiletrackpad.hid.HostProfile
+import com.mfouad.mobiletrackpad.hid.HostProfiles
 import com.mfouad.mobiletrackpad.service.HidSessionService
 import com.mfouad.mobiletrackpad.session.Phase
 import com.mfouad.mobiletrackpad.session.Problem
@@ -53,9 +60,13 @@ fun ConnectionScreen(
     onOpenTrackpad: () -> Unit,
     onOpenTest: () -> Unit,
     onOpenDiagnostics: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val reconnect by AppGraph.controller.reconnect.collectAsStateWithLifecycle()
+    val stoppedByUser by AppGraph.stoppedByUserLastTime.collectAsStateWithLifecycle()
+    val profiles by AppGraph.settingsStore.profiles.collectAsStateWithLifecycle(HostProfiles.defaults)
     val controller = AppGraph.controller
     val env = remember { BluetoothEnv(context) }
     val state by controller.state.collectAsStateWithLifecycle()
@@ -118,8 +129,28 @@ fun ConnectionScreen(
             )
             Text(stringResource(R.string.connection_intro), style = MaterialTheme.typography.bodyLarge)
 
+            if (stoppedByUser) {
+                InfoCard(stringResource(R.string.exit_notice_title), isError = true) {
+                    Text(stringResource(R.string.exit_notice_body))
+                    TextButton(
+                        onClick = AppGraph::dismissStoppedByUser,
+                    ) { Text(stringResource(R.string.action_dismiss)) }
+                }
+            }
             StatusSection(state, hosts)
-            state.problem?.let { ProblemCard(it, state.detail, actions) }
+            reconnect?.let { r ->
+                val name = hosts.firstOrNull { it.address == r.address }?.name ?: r.address
+                InfoCard(stringResource(R.string.status_heading)) {
+                    Text(
+                        stringResource(R.string.reconnect_status, name, r.attempt, r.maxAttempts),
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
+                    TextButton(
+                        onClick = controller::cancelReconnect,
+                    ) { Text(stringResource(R.string.reconnect_cancel)) }
+                }
+            }
+            state.problem?.takeIf { reconnect == null }?.let { ProblemCard(it, state.detail, actions) }
 
             if (!state.isActive) {
                 Button(
@@ -148,6 +179,9 @@ fun ConnectionScreen(
             OutlinedButton(onClick = onOpenTest, enabled = state.isConnected, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.action_open_test))
             }
+            OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.action_settings))
+            }
             OutlinedButton(onClick = onOpenDiagnostics, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.action_open_diagnostics))
             }
@@ -171,10 +205,9 @@ fun ConnectionScreen(
                 state = state,
                 hosts = hosts,
                 records = records,
+                profiles = profiles,
                 hasPermission = env.hasConnectPermission(),
-                onConnect = controller::connect,
-                onDisconnect = controller::disconnect,
-                onRefresh = controller::refreshHosts,
+                actions = HostActions(controller::connect, controller::disconnect, controller::refreshHosts),
             )
         }
     }
@@ -272,19 +305,28 @@ private fun HostList(
     state: SessionState,
     hosts: List<BondedHost>,
     records: HostRecords,
+    profiles: List<HostProfile>,
     hasPermission: Boolean,
-    onConnect: (String) -> Unit,
-    onDisconnect: () -> Unit,
-    onRefresh: () -> Unit,
+    actions: HostActions,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeading(stringResource(R.string.hosts_heading))
         when {
-            !hasPermission -> Text(stringResource(R.string.hosts_need_permission))
-            hosts.isEmpty() -> Text(stringResource(R.string.hosts_empty))
-            else -> hosts.forEach { host -> HostRow(host, state, records, onConnect, onDisconnect) }
+            !hasPermission -> {
+                Text(stringResource(R.string.hosts_need_permission))
+            }
+
+            hosts.isEmpty() -> {
+                Text(stringResource(R.string.hosts_empty))
+            }
+
+            else -> {
+                hosts.forEach { host ->
+                    HostRow(host, state, records, profiles, actions.connect, actions.disconnect)
+                }
+            }
         }
-        if (hasPermission) TextButton(onClick = onRefresh) { Text(stringResource(R.string.action_refresh)) }
+        if (hasPermission) TextButton(onClick = actions.refresh) { Text(stringResource(R.string.action_refresh)) }
     }
 }
 
@@ -293,6 +335,7 @@ private fun HostRow(
     host: BondedHost,
     state: SessionState,
     records: HostRecords,
+    profiles: List<HostProfile>,
     onConnect: (String) -> Unit,
     onDisconnect: () -> Unit,
 ) {
@@ -309,11 +352,14 @@ private fun HostRow(
         Text(host.name, style = MaterialTheme.typography.bodyLarge)
         Text(host.address, style = MaterialTheme.typography.bodySmall)
         Text(stringResource(flag), style = MaterialTheme.typography.bodySmall)
-        if (records.lastHost ==
-            host.address
-        ) {
+        if (records.lastHost == host.address) {
             Text(stringResource(R.string.host_last), style = MaterialTheme.typography.labelSmall)
         }
+        ProfileChooser(
+            current = records.profiles[host.address] ?: HostProfiles.CUSTOM,
+            profiles = profiles,
+            onChoose = { id -> AppGraph.hostStore.setProfile(host.address, id) },
+        )
         when {
             isThisHost && (state.phase == Phase.CONNECTED || state.phase == Phase.CONNECTING) -> {
                 OutlinedButton(onClick = onDisconnect) { Text(stringResource(R.string.action_disconnect)) }
@@ -325,3 +371,32 @@ private fun HostRow(
         }
     }
 }
+
+@Composable
+private fun ProfileChooser(
+    current: String,
+    profiles: List<HostProfile>,
+    onChoose: (String) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val name = profiles.firstOrNull { it.id == current }?.name ?: current
+    Box {
+        TextButton(onClick = { open = true }) {
+            Text(stringResource(R.string.profile_used_by, name))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            profiles.forEach { p ->
+                DropdownMenuItem(text = { Text(p.name) }, onClick = {
+                    onChoose(p.id)
+                    open = false
+                })
+            }
+        }
+    }
+}
+
+private class HostActions(
+    val connect: (String) -> Unit,
+    val disconnect: () -> Unit,
+    val refresh: () -> Unit,
+)

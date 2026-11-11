@@ -26,14 +26,19 @@ sealed interface GestureEvent {
         val dy: Float,
     ) : GestureEvent
 
-    /** Relative change in finger distance since the previous event; > 0 when spreading. */
+    /**
+     * Relative change in finger distance since the previous event; > 0 when spreading.
+     * [start] is true on the first event of a pinch gesture.
+     */
     data class Pinch(
         val scaleDelta: Float,
+        val start: Boolean = false,
     ) : GestureEvent
 
-    /** Clockwise rotation in degrees since the previous event. */
+    /** Clockwise rotation in degrees since the previous event; [start] marks the first event. */
     data class Rotate(
         val degrees: Float,
+        val start: Boolean = false,
     ) : GestureEvent
 
     data class Swipe3(

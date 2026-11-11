@@ -18,9 +18,16 @@ import com.mfouad.mobiletrackpad.gesture.Scheduler
 class ReportSender(
     private val sink: OutputSink,
     private val scheduler: Scheduler,
-    private val intervalNanos: Long = DEFAULT_INTERVAL_NANOS,
+    intervalNanos: Long = DEFAULT_INTERVAL_NANOS,
     private val maxQueuedTransitions: Int = DEFAULT_MAX_QUEUED_TRANSITIONS,
 ) {
+    /** Minimum time between reports while input is changing; raised by battery saving. */
+    var intervalNanos: Long = intervalNanos
+        set(value) {
+            require(value > 0) { "interval must be positive" }
+            field = value
+        }
+
     var isConnected: Boolean = false
         private set
 

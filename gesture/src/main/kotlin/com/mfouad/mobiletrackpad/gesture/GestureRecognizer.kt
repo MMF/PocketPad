@@ -44,6 +44,8 @@ class GestureRecognizer(
     private var previous: Map<Int, Pointer> = emptyMap()
     private val starts = HashMap<Int, Pointer>()
 
+    private val contacts = ContactFilter()
+
     private var downTime = 0L
     private var maxCount = 0
     private var moved = false
@@ -84,6 +86,7 @@ class GestureRecognizer(
     /** Ends everything: stops inertia, releases a held button, forgets tap history. */
     fun cancel() {
         inertia.stop()
+        contacts.clear()
         releaseButton()
         resetSession()
         lastTapUpTime = null
@@ -98,6 +101,10 @@ class GestureRecognizer(
     private fun onDown(f: PointerFrame) {
         val id = f.changedId ?: return
         val p = f.pointers.firstOrNull { it.id == id } ?: return
+        if (contacts.rejectOnDown(p, config.largeContactSize)) {
+            onModeChange?.invoke("rejected large contact $id (size ${p.size})")
+            return
+        }
         setPositions(f)
         if (mode == Mode.IDLE) startSession(f.timeNanos, p) else addPointer(p)
     }
@@ -117,6 +124,7 @@ class GestureRecognizer(
 
     private fun onUp(f: PointerFrame) {
         val id = f.changedId ?: return
+        if (contacts.release(id)) return
         setPositions(f)
         positions = positions - id
         previous = previous - id
@@ -340,13 +348,13 @@ class GestureRecognizer(
 
     private fun beginPinch(distance: Float) {
         mode = Mode.PINCH
-        if (baseDistance > 0f) emit(GestureEvent.Pinch(distance / baseDistance - 1f))
+        if (baseDistance > 0f) emit(GestureEvent.Pinch(distance / baseDistance - 1f, start = true))
         lastDistance = distance
     }
 
     private fun beginRotate(angle: Float) {
         mode = Mode.ROTATE
-        emit(GestureEvent.Rotate(angleDelta(baseAngle, angle)))
+        emit(GestureEvent.Rotate(angleDelta(baseAngle, angle), start = true))
         lastAngle = angle
     }
 
@@ -394,7 +402,7 @@ class GestureRecognizer(
 
     private fun setPositions(f: PointerFrame) {
         previous = positions
-        positions = f.pointers.associateBy { it.id }
+        positions = contacts.visible(f.pointers).associateBy { it.id }
     }
 
     private fun click(button: PointerButton) {

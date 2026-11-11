@@ -2,36 +2,45 @@ package com.mfouad.mobiletrackpad.ui
 
 import android.app.Activity
 import android.os.Build
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,7 +53,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mfouad.mobiletrackpad.AppGraph
 import com.mfouad.mobiletrackpad.R
+import com.mfouad.mobiletrackpad.hid.MouseButton
 import com.mfouad.mobiletrackpad.input.MotionEventFrames
+import com.mfouad.mobiletrackpad.settings.Settings
 
 const val TRACKPAD_SURFACE_TAG = "trackpad-surface"
 
@@ -68,9 +79,18 @@ fun TrackpadScreen(
     val state by controller.state.collectAsStateWithLifecycle()
     val hosts by controller.bondedHosts.collectAsStateWithLifecycle()
     val view = LocalView.current
+    val settings by AppGraph.settingsStore.settings.collectAsStateWithLifecycle(Settings())
+    val dragLocked by controller.input.dragLocked.collectAsStateWithLifecycle()
+    val reconnect by controller.reconnect.collectAsStateWithLifecycle()
 
     ImmersiveMode()
     PauseWhenNotVisible()
+    BatterySaverWindow(settings.batterySaver)
+    LaunchedEffect(settings.effectiveHaptics) {
+        if (settings.effectiveHaptics) {
+            controller.input.clickFeedback.collect { view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK) }
+        }
+    }
     DisposableEffect(state.isConnected) {
         view.keepScreenOn = state.isConnected
         onDispose { view.keepScreenOn = false }
@@ -89,7 +109,7 @@ fun TrackpadScreen(
                         // Deliver touch as it arrives instead of once per frame.
                         view.requestUnbufferedDispatch(ev)
                     }
-                    controller.onTouchFrames(MotionEventFrames.from(ev))
+                    controller.input.onTouchFrames(MotionEventFrames.from(ev))
                     true
                 },
         )
@@ -107,10 +127,10 @@ fun TrackpadScreen(
             )
             Text(
                 text =
-                    if (state.isConnected) {
-                        stringResource(R.string.trackpad_connected, hostName)
-                    } else {
-                        stringResource(R.string.trackpad_not_connected)
+                    when {
+                        state.isConnected -> stringResource(R.string.trackpad_connected, hostName)
+                        reconnect != null -> stringResource(R.string.trackpad_reconnecting)
+                        else -> stringResource(R.string.trackpad_not_connected)
                     },
                 color = Color.White,
                 style = MaterialTheme.typography.bodyMedium,
@@ -118,16 +138,126 @@ fun TrackpadScreen(
             )
             TextButton(onClick = onStop) { Text(stringResource(R.string.action_stop)) }
         }
-        Text(
-            text = stringResource(R.string.trackpad_hint),
-            color = SubtleText,
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(24.dp),
-        )
-        Spacer(Modifier)
+        Column(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .safeDrawingPadding()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (dragLocked) DragLockBanner(onRelease = controller.input::releaseDragLock)
+            if (!settings.onScreenButtons) {
+                Text(
+                    text = stringResource(R.string.trackpad_hint),
+                    color = SubtleText,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                )
+            } else {
+                MouseButtons(leftHanded = settings.leftHanded)
+            }
+        }
     }
 }
+
+@Composable
+private fun DragLockBanner(onRelease: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(BannerColor, RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.trackpad_drag_locked), color = Color.White, modifier = Modifier.weight(1f))
+        TextButton(onClick = onRelease) { Text(stringResource(R.string.trackpad_release)) }
+    }
+}
+
+/**
+ * Optional on-screen buttons. Pressing holds the button until the finger lifts, so they can
+ * also be used for dragging together with the touch surface.
+ */
+@Composable
+private fun MouseButtons(leftHanded: Boolean) {
+    val first = if (leftHanded) MouseButton.SECONDARY else MouseButton.PRIMARY
+    val second = if (leftHanded) MouseButton.PRIMARY else MouseButton.SECONDARY
+    Row(Modifier.fillMaxWidth().height(BUTTON_HEIGHT), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        HoldButton(first, Modifier.weight(1f))
+        HoldButton(second, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun HoldButton(
+    button: MouseButton,
+    modifier: Modifier,
+) {
+    val input = AppGraph.controller.input
+    val label =
+        stringResource(
+            if (button ==
+                MouseButton.PRIMARY
+            ) {
+                R.string.trackpad_button_primary
+            } else {
+                R.string.trackpad_button_secondary
+            },
+        )
+    Box(
+        modifier
+            .fillMaxHeight()
+            .background(ButtonColor, RoundedCornerShape(12.dp))
+            .semantics {
+                contentDescription = label
+                role = Role.Button
+            }.pointerInput(button) {
+                detectTapGestures(onPress = {
+                    input.pressButton(button)
+                    tryAwaitRelease()
+                    input.releaseButton(button)
+                })
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = SubtleText)
+    }
+}
+
+/** Battery saving: dim this window and prefer a standard refresh rate while the trackpad shows. */
+@Composable
+private fun BatterySaverWindow(enabled: Boolean) {
+    val view = LocalView.current
+    DisposableEffect(enabled) {
+        val window = (view.context as? Activity)?.window
+        val original = window?.attributes?.let { it.screenBrightness to it.preferredRefreshRate }
+        if (enabled && window != null) {
+            window.attributes =
+                window.attributes.apply {
+                    screenBrightness = DIMMED_BRIGHTNESS
+                    preferredRefreshRate = STANDARD_REFRESH_RATE
+                }
+        }
+        onDispose {
+            if (window != null && original != null) {
+                window.attributes =
+                    window.attributes.apply {
+                        screenBrightness = original.first
+                        preferredRefreshRate = original.second
+                    }
+            }
+        }
+    }
+}
+
+private const val DIMMED_BRIGHTNESS = 0.1f
+private const val STANDARD_REFRESH_RATE = 60f
+private val BUTTON_HEIGHT = 72.dp
+private val BannerColor = Color(0xFF37474F)
+private val ButtonColor = Color(0xFF1C1C1C)
 
 /** Hides the system bars while the trackpad is shown; a swipe from the edge reveals them briefly. */
 @Composable
@@ -149,12 +279,12 @@ private fun PauseWhenNotVisible() {
     DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_STOP) controller.pauseTrackpad()
+                if (event == Lifecycle.Event.ON_STOP) controller.input.pause()
             }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            controller.pauseTrackpad()
+            controller.input.pause()
         }
     }
 }

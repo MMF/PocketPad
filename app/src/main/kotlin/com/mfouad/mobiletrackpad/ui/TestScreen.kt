@@ -46,12 +46,12 @@ fun TestScreen(
     DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_STOP) controller.releaseAll()
+                if (event == Lifecycle.Event.ON_STOP) controller.input.releaseAll()
             }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            controller.releaseAll()
+            controller.input.releaseAll()
         }
     }
 
@@ -87,7 +87,7 @@ fun TestScreen(
                 TestAction.VOLUME_DOWN to R.string.test_volume_down,
             ).forEach { (action, label) ->
                 Button(
-                    onClick = { controller.runTest(action) },
+                    onClick = { controller.input.runTest(action) },
                     enabled = enabled,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -95,12 +95,12 @@ fun TestScreen(
                 }
             }
             OutlinedButton(
-                onClick = { controller.runTest(TestAction.HOLD_LEFT) },
+                onClick = { controller.input.runTest(TestAction.HOLD_LEFT) },
                 enabled = enabled,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.test_hold_left)) }
             OutlinedButton(
-                onClick = { controller.runTest(TestAction.RELEASE_LEFT) },
+                onClick = { controller.input.runTest(TestAction.RELEASE_LEFT) },
                 enabled = enabled,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.test_release_left)) }

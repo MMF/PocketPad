@@ -89,6 +89,7 @@ class TrackpadSurfaceTest {
 
     @Before
     fun openTrackpadWithSimulatedComputer() {
+        rule.passOnboardingIfShown()
         controller.stop()
         waitFor("idle") { !controller.state.value.isActive }
         click(R.string.action_simulate)
@@ -247,7 +248,7 @@ class TrackpadSurfaceTest {
     }
 
     private companion object {
-        const val TIMEOUT_MS = 5_000L
+        const val TIMEOUT_MS = 10_000L // generous: the emulator can be slow under load
         const val SETTLE_MS = 300L
     }
 }

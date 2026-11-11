@@ -14,27 +14,21 @@ import com.mfouad.mobiletrackpad.diagnostics.DiagnosticsLog.Category
 import com.mfouad.mobiletrackpad.diagnostics.LoggingOutputSink
 import com.mfouad.mobiletrackpad.engine.Engine
 import com.mfouad.mobiletrackpad.gesture.Cancellable
-import com.mfouad.mobiletrackpad.gesture.GestureConfig
-import com.mfouad.mobiletrackpad.gesture.GestureEvent
-import com.mfouad.mobiletrackpad.gesture.GestureRecognizer
-import com.mfouad.mobiletrackpad.gesture.PointerFrame
 import com.mfouad.mobiletrackpad.hid.HidDescriptor
 import com.mfouad.mobiletrackpad.hid.HidReply
 import com.mfouad.mobiletrackpad.hid.HidReport
 import com.mfouad.mobiletrackpad.hid.HidRequestHandler
 import com.mfouad.mobiletrackpad.hid.OutputSink
-import com.mfouad.mobiletrackpad.hid.PointerSettings
 import com.mfouad.mobiletrackpad.hid.ProtocolMode
 import com.mfouad.mobiletrackpad.hid.ReportSender
-import com.mfouad.mobiletrackpad.hid.TrackpadMapper
+import com.mfouad.mobiletrackpad.input.InputPipeline
 import com.mfouad.mobiletrackpad.session.LinkState
 import com.mfouad.mobiletrackpad.session.Phase
 import com.mfouad.mobiletrackpad.session.Problem
+import com.mfouad.mobiletrackpad.session.Reconnector
 import com.mfouad.mobiletrackpad.session.SessionEvent
 import com.mfouad.mobiletrackpad.session.SessionMachine
 import com.mfouad.mobiletrackpad.session.SessionState
-import com.mfouad.mobiletrackpad.session.TestAction
-import com.mfouad.mobiletrackpad.session.TestInput
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -97,17 +91,24 @@ class HidSessionController(
     /** The ordered report path. Engine thread only. */
     val sender = ReportSender(LoggingOutputSink(OutputSink(::deliver), log), scheduler)
     private val requests = HidRequestHandler(sender::currentInputReport)
-    private val testInput = TestInput(sender, scheduler, log)
 
-    private val density = context.resources.displayMetrics.density
+    /** Touch input, gestures, mapping and settings. */
+    val input = InputPipeline(engine, sender, log, context.resources.displayMetrics.density)
 
-    /** Gesture-to-report mapping; settings become user-editable in Milestone 5. */
-    private val mapper = TrackpadMapper(sender, PointerSettings.forDensity(density))
-    private val recognizer =
-        GestureRecognizer(GestureConfig.forDensity(density), scheduler) { e ->
-            logGesture(e)
-            mapper.onEvent(e)
-        }.apply { onModeChange = { change -> log.log(Category.GESTURE) { "mode $change" } } }
+    private val reconnectFlow = MutableStateFlow<Reconnector.Status?>(null)
+
+    /** Non-null while automatically reconnecting to the last host. */
+    val reconnect: StateFlow<Reconnector.Status?> = reconnectFlow.asStateFlow()
+
+    private val reconnector =
+        Reconnector(
+            scheduler,
+            connect = { address ->
+                log.log(Category.SESSION) { "reconnect attempt to $address" }
+                connectOnEngine(address)
+            },
+            onStatus = { reconnectFlow.value = it },
+        )
 
     // --- public API (any thread) ---------------------------------------------------------
 
@@ -118,9 +119,17 @@ class HidSessionController(
 
     fun stop() = engine.post { stopOnEngine() }
 
-    fun connect(address: String) = engine.post { connectOnEngine(address) }
+    fun connect(address: String) =
+        engine.post {
+            reconnector.cancel()
+            connectOnEngine(address)
+        }
 
-    fun disconnect() = engine.post { disconnectOnEngine() }
+    fun disconnect() =
+        engine.post {
+            reconnector.cancel()
+            disconnectOnEngine()
+        }
 
     fun refreshHosts() = engine.post { refreshHostsOnEngine() }
 
@@ -133,32 +142,8 @@ class HidSessionController(
     /** Runs [block] on the engine thread with the sender. Used by test controls and the trackpad. */
     fun withSender(block: (ReportSender) -> Unit) = engine.post { block(sender) }
 
-    /**
-     * Touch input from the trackpad surface. Ignored unless connected, so nothing is queued or
-     * replayed while there is no host.
-     */
-    fun onTouchFrames(frames: List<PointerFrame>) =
-        engine.post {
-            if (state.value.isConnected) frames.forEach(recognizer::onFrame)
-        }
-
-    /** The trackpad surface stopped being active: cancel gestures and inertia, release everything. */
-    fun pauseTrackpad() =
-        engine.post {
-            recognizer.cancel()
-            testInput.cancel()
-            sender.releaseAll()
-        }
-
-    /** Sends a fixed test input (Milestone 2 test screen). */
-    fun runTest(action: TestAction) = engine.post { testInput.run(action) }
-
-    /** The input surface lost focus or touch was cancelled: release everything held. */
-    fun releaseAll() =
-        engine.post {
-            testInput.cancel()
-            sender.releaseAll()
-        }
+    /** Stops automatic reconnection. */
+    fun cancelReconnect() = engine.post { reconnector.cancel() }
 
     val ledState: Int get() = requests.ledState
 
@@ -183,6 +168,7 @@ class HidSessionController(
         if (new.phase != old.phase) cancelTimeout()
         applyOutputSafety(old, new, e)
         recordHost(old, new, e)
+        reconnector.onTransition(old, new)
         if (new.phase == Phase.IDLE && old.phase != Phase.IDLE && e !is SessionEvent.Stopped) cleanup()
         if (new.phase == Phase.IDLE) endedFlow.tryEmit(Unit)
     }
@@ -199,12 +185,13 @@ class HidSessionController(
             // Neutral reports first on every new connection.
             !wasConnected && isConnected -> {
                 sender.onConnected()
+                input.onLinkChanged(true, new.hostAddress)
             }
 
             // Unexpected or requested: local held state is cleared; nothing is replayed later.
             wasConnected && !isConnected -> {
                 sender.onDisconnected()
-                recognizer.cancel()
+                input.onLinkChanged(false, null)
             }
 
             isConnected && e is SessionEvent.ProtocolChanged -> {
@@ -512,7 +499,8 @@ class HidSessionController(
     /** Unregisters and releases everything. Safe to call more than once. */
     private fun cleanup() {
         cancelTimeout()
-        testInput.cancel()
+        input.onLinkChanged(false, null)
+        reconnector.cancel()
         sender.onDisconnected()
         proxy?.let { p ->
             val unregistered = p.unregisterApp()
@@ -526,12 +514,6 @@ class HidSessionController(
     }
 
     // --- report delivery --------------------------------------------------------------------
-
-    private fun logGesture(e: GestureEvent) {
-        // Moves and scroll steps are too frequent to log; the reports they produce are logged.
-        if (e is GestureEvent.Move || e is GestureEvent.Scroll) return
-        log.log(Category.GESTURE) { e.toString() }
-    }
 
     private fun deliver(report: HidReport): Boolean {
         simulatedSink?.let { return it.send(report) }

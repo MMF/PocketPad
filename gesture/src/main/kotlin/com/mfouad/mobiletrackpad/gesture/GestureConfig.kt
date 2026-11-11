@@ -38,6 +38,12 @@ data class GestureConfig(
     val velocityWindowNanos: Long = DEFAULT_VELOCITY_WINDOW,
     /** If fingers lift at different times, the last lift must follow the first within this window. */
     val liftGraceNanos: Long = DEFAULT_LIFT_GRACE,
+    /**
+     * A contact whose reported size (0..1, MotionEvent.getSize) is at least this when it lands
+     * is treated as a palm and ignored until it lifts. Null disables. Best effort: what "size"
+     * means varies by device, and some report nothing useful.
+     */
+    val largeContactSize: Float? = DEFAULT_LARGE_CONTACT_SIZE,
 ) {
     companion object {
         const val MS = 1_000_000L
@@ -48,6 +54,7 @@ data class GestureConfig(
         const val DEFAULT_INERTIA_TICK = 8 * MS
         const val DEFAULT_VELOCITY_WINDOW = 80 * MS
         const val DEFAULT_LIFT_GRACE = 100 * MS
+        const val DEFAULT_LARGE_CONTACT_SIZE = 0.6f
 
         @Suppress("MagicNumber") // Defaults in dp, tuned on real hardware later.
         fun forDensity(pxPerDp: Float): GestureConfig =

@@ -58,9 +58,13 @@ MotionEvent ─▶ ui/ TrackpadSurface ─▶ PointerFrame
 
 - `HidDescriptor`: the descriptor bytes and report sizes.
 - Encoders for report mode and boot mode.
-- `Action`: `MouseButton`, `KeyChord(modifiers, keys)`, `ConsumerUsage`, `Sequence(actions)`.
-- `HostProfile`: data mapping each gesture to an `Action`; built-in Windows, macOS, Linux/GNOME,
-  Linux/KDE and Custom, all editable.
+- `Action`: `MouseClick`, `KeyChord(modifiers, keys)`, `Consumer(usage)`,
+  `ModifierWheel(modifiers, wheel, pan)` and `Sequence(actions)`.
+- `HostProfile`: data mapping each `GestureSlot` (pinch in/out, rotate both ways, three-finger
+  swipes) to an `Action`; built-in Windows, macOS, Linux/GNOME, Linux/KDE and Custom, all
+  editable. `ProfileCodec` stores them as text; unreadable entries decode to "no action".
+- `TrackpadMapper`: gesture events to sender calls. Pinch and rotate perform their action once
+  per step (25% scale, 30°); shortcuts stop scroll inertia first.
 - `ReportSender`: the single ordered output path (section 6).
 - `OutputSink`: `send(reportId, payload): Boolean` plus connection and protocol-mode state.
   Gesture recognition never references a transport.
@@ -70,9 +74,12 @@ MotionEvent ─▶ ui/ TrackpadSurface ─▶ PointerFrame
 - `bluetooth/` — thin wrapper over `BluetoothHidDevice`: proxy acquisition, registration,
   connection, callbacks, report delivery. Implements `OutputSink`.
 - `service/` — the foreground service that owns the session.
-- `data/` — DataStore for settings, per-host profiles, known hosts.
+- `input/` — `InputPipeline`: recognizer, mapper, active profile, settings, test inputs and
+  on-screen buttons, on the engine thread; `MotionEventFrames` converts touch events.
+- `session/` — the session reducer, `Reconnector` (pure) and test inputs.
+- `settings/`, `data/` — DataStore for settings, edited profiles and per-host records.
 - `ui/` — Jetpack Compose, Material 3. Screens: Onboarding, Connection, Trackpad, Settings,
-  Diagnostics.
+  Gesture shortcuts (profiles and action editor), Test input, Diagnostics.
 
 ## 3. Threading
 
@@ -213,7 +220,7 @@ still runs and appears only in the system Task Manager **[DOC]**.
 | Screen off | Same as leaving the trackpad screen. |
 | Return to the trackpad screen | Control resumes. |
 | Stop (in-app or notification) | Session **ends** (stop sequence above). |
-| User stops the app from the system Task Manager (API 33+) | The process is killed with no callback **[DOC]**. No release reports can be sent. On next launch `ApplicationExitInfo` is checked and the user is told why the session ended *(Milestone 5)*. |
+| User stops the app from the system Task Manager (API 33+) | The process is killed with no callback **[DOC]**. No release reports can be sent. On next launch (API 30+) `ApplicationExitInfo` is checked; if the last exit was `REASON_USER_REQUESTED` while a session was active, the main screen explains what happened. |
 | Bluetooth turned off | Registration lost; session returns to Idle with the "Bluetooth disabled" diagnostic. |
 
 The screen is kept awake only while the trackpad surface is visible and connected.
@@ -239,9 +246,9 @@ is never inferred from its name; the user picks a profile per computer.
 - The user chooses a paired computer; the app calls `connect` and waits for the callback.
   A host may also connect on its own while the app is registered; that is accepted.
 - After an unexpected disconnect during an active session, the app retries the last host a
-  bounded number of times with increasing delay. The user can cancel. *(Planned for
-  Milestone 5. Until then an unexpected disconnect returns to "Ready" with a "Connection lost"
-  message and the user reconnects manually.)*
+  bounded number of times with increasing delay (after 2, 5 and 10 seconds; `Reconnector`).
+  The user can cancel from the main screen. Connecting or disconnecting manually also cancels
+  it. The phone must reconnect: macOS did not reconnect on its own when tested.
 - No automatic reconnect after an explicit disconnect.
 - No automatic reconnect after `onVirtualCableUnplug`: the session ends for that host and the
   user is prompted to re-pair.
@@ -296,11 +303,11 @@ Battery-saving mode is a setting (off by default) that additionally:
 
 | Change | Detail |
 |---|---|
-| Dims the trackpad surface | Lowers the window brightness for the trackpad screen only, via the window's `screenBrightness` attribute; the system brightness setting is not touched. The surface is already true black. Indicators and on-screen buttons are drawn at reduced contrast but stay legible. |
-| Disables decorative animations | Touch ripples, transitions and indicator animations on the trackpad screen are off. State changes that carry meaning (connection lost, drag lock on) are still shown, without animation. |
+| Dims the trackpad surface | Window `screenBrightness` 0.1 for the trackpad screen only; the system brightness setting is not touched and the previous value is restored when the screen closes. The surface is already true black. |
+| No decorative animations | The trackpad screen has none to begin with (only the standard press feedback on Back and Stop). Meaningful state (connection, drag lock) is shown as static text. |
 | Disables optional haptics | Click haptics are suppressed while the mode is on, whatever the haptics setting says. |
-| Does not request high refresh rates | The app never asks for a high display refresh rate in this mode and, where the platform allows, states a preference for a standard-rate display mode on the trackpad screen. The system makes the final choice. |
-| Reduces report frequency when appropriate | The send interval rises from 8 ms to about 11 ms (90 Hz) for movement and scrolling. Inertia runs at a lower rate still. Button, key and consumer transitions are never delayed, and total displacement is preserved because movement keeps accumulating between sends. |
+| Does not request high refresh rates | The app never asks for a high rate; in this mode it sets the trackpad window's `preferredRefreshRate` to 60. The system makes the final choice. |
+| Reduces report frequency | The send interval rises from 8 ms to 11 ms (about 90 Hz) for movement and scrolling, and scroll momentum steps at the same 11 ms. Button, key and consumer transitions are never delayed beyond one interval, and total displacement is preserved because movement keeps accumulating between sends. |
 
 Limits and unknowns:
 
@@ -312,9 +319,9 @@ Limits and unknowns:
 - The Bluetooth link's own power behaviour (sniff mode) is managed by the two Bluetooth stacks,
   not by the app; sending nothing while idle is what lets the link go quiet.
 
-Milestones: the no-idle sender is part of Milestone 1 (with a test that an idle sender schedules
-no work); the wake-lock rule arrives with the trackpad surface in Milestone 3; the
-battery-saving setting and its effects are part of Milestone 5.
+Implemented: the no-idle sender (Milestone 1, with a test that an idle sender schedules no
+work), the keep-screen-on rule (Milestone 3) and the battery-saving setting (Milestone 5, mapping
+unit-tested; window effects checked on the emulator only).
 
 ## 8. Permissions and manifest
 
@@ -326,7 +333,9 @@ battery-saving setting and its effects are part of Milestone 5.
 | `FOREGROUND_SERVICE` | API 28+ **[DOC]** |
 | `FOREGROUND_SERVICE_CONNECTED_DEVICE` | API 34+ **[DOC]** |
 | `POST_NOTIFICATIONS` | API 33+ runtime; optional |
-| `VIBRATE` | Haptic feedback |
+
+Click haptics use `View.performHapticFeedback`, which needs no permission, so `VIBRATE` is not
+requested.
 
 Not requested: `BLUETOOTH_SCAN`, location, `INTERNET`. The app never scans; it works only with
 devices the user paired through system settings.
@@ -338,13 +347,17 @@ confirmed; it is declared for those versions regardless.
 
 DataStore holds:
 
-- Global settings: battery-saving mode, sensitivity, acceleration, scroll speed/direction/inertia, tap-to-click, drag
-  lock, haptics, left-handed layout, on-screen buttons, send interval, gesture thresholds.
-- Known hosts: address, display name, selected profile, whether it bonded or connected while
-  registered, whether it needs re-pairing.
-- Profiles: built-in defaults plus user edits, stored as data.
-- Diagnostics enabled flag (off by default). The log itself stays in memory and leaves the app
-  only when the user copies or shares it.
+- Settings (`settings` store): pointer speed, acceleration, scroll speed, reverse scroll,
+  momentum, tap to click, drag lock, haptics, on-screen buttons, left-handed layout, battery
+  saving, onboarding completed, and a "session active" marker used for the Task Manager notice.
+  Gesture thresholds are fixed in code (`GestureConfig`), not user settings.
+- Profiles: the user's edited copy of any built-in profile (`ProfileCodec` text); a missing
+  entry means the built-in defaults.
+- Known hosts (`hosts` store): addresses that bonded or connected while registered, addresses
+  needing re-pairing, the last host, and each host's chosen profile. Names come from Android's
+  bond list.
+- Diagnostics recording is an in-memory switch, off at every launch. The log stays in memory and
+  leaves the app only when the user copies or shares it.
 
 ## 10. Diagnostics
 
@@ -405,11 +418,14 @@ as working on emulator or log evidence alone.
 - **Simulated computer** — in debug builds the Connection screen offers "Start simulated
   computer". It drives the same session state machine and report sender, with the recorder as
   the transport, and needs no Bluetooth or foreground service.
-- **Instrumented tests** — `./gradlew :app:connectedDebugAndroidTest` on an emulator. They
-  drive the real UI against the simulated computer and assert on the exact recorded reports
-  (Milestone 2: test-input buttons, neutral-on-connect, release-on-leave, stop). From
-  Milestone 3 they also inject multi-touch input on the trackpad surface. CI runs only the JVM
-  checks; instrumented tests are run locally.
+- **Instrumented tests** — `ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest`
+  (Gradle otherwise runs them on every attached device and uninstalls the app afterwards). They
+  drive the real UI against the simulated computer and assert on the exact recorded reports:
+  test-input buttons, neutral-on-connect, release on leaving or stopping (`SimulatedSessionTest`);
+  multi-touch taps, movement, scrolling, drag and keep-screen-on (`TrackpadSurfaceTest`);
+  onboarding and the compatibility check, settings applied, pinch and three-finger shortcuts per
+  profile, the mapping editor, on-screen buttons and drag lock (`FeaturesTest`). CI runs only the
+  JVM checks; instrumented tests are run locally.
 - **Real-device tests** — one test at a time: install the build, capture logcat, give numbered
   steps, ask a specific question about what happened, then compare the answer with logcat and
   the Diagnostics log before drawing a conclusion. A phone/computer/OS combination enters the
@@ -417,12 +433,15 @@ as working on emulator or log evidence alone.
 
 ## 13. Milestones
 
-1. Docs, scaffold, descriptor, encoders (report and boot mode), unit tests, CI.
+1. Docs, scaffold, descriptor, encoders (report and boot mode), unit tests, CI. *Done.*
 2. Bluetooth registration, pairing guidance and pairing-order handling, connection, test
-   movement, Diagnostics screen, stuck-input safety.
-3. Trackpad surface, movement, taps, dragging, two-finger scrolling.
-4. Pinch, rotate and three-finger mappings, host profiles, mapping editor.
-5. Complete settings, onboarding, reconnection, accessibility, polish.
+   movement, Diagnostics screen, stuck-input safety. *Done; confirmed on a real phone and Mac.*
+3. Trackpad surface, movement, taps, dragging, two-finger scrolling. *Built; automated and
+   emulator tests pass; real-device checks pending.*
+4. Pinch, rotate and three-finger mappings, host profiles, mapping editor. *Built; automated
+   and emulator tests pass; real-device checks pending.*
+5. Complete settings, onboarding, reconnection, accessibility, polish. *Built; automated and
+   emulator tests pass; real-device checks pending.*
 6. Research only: native multitouch HID feasibility. Microsoft lists USB, I²C and SPI as
    Precision Touchpad transports, not Bluetooth; changing the descriptor is not assumed to
    enable native gestures.

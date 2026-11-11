@@ -21,6 +21,8 @@ data class HostRecords(
     /** Hosts that sent a virtual cable unplug: the pairing must be redone. */
     val needsRepair: Set<String> = emptySet(),
     val lastHost: String? = null,
+    /** Host address to chosen profile id. Hosts without an entry use the Custom profile. */
+    val profiles: Map<String, String> = emptyMap(),
 )
 
 /** Per-host records in DataStore. Writes run on [scope]; callers never block. */
@@ -32,7 +34,16 @@ class HostStore(
 
     val records: Flow<HostRecords> =
         store.data.map { p ->
-            HostRecords(p[HID_PAIRED].orEmpty(), p[NEEDS_REPAIR].orEmpty(), p[LAST_HOST])
+            HostRecords(
+                p[HID_PAIRED].orEmpty(),
+                p[NEEDS_REPAIR].orEmpty(),
+                p[LAST_HOST],
+                p[HOST_PROFILES]
+                    .orEmpty()
+                    .mapNotNull { entry ->
+                        entry.split(PROFILE_SEPARATOR, limit = 2).takeIf { it.size == 2 }?.let { it[0] to it[1] }
+                    }.toMap(),
+            )
         }
 
     fun markHidPaired(address: String) =
@@ -57,6 +68,14 @@ class HostStore(
 
     fun setLastHost(address: String) = update { p -> p[LAST_HOST] = address }
 
+    fun setProfile(
+        address: String,
+        profileId: String,
+    ) = update { p ->
+        val others = p[HOST_PROFILES].orEmpty().filterNot { it.startsWith(address + PROFILE_SEPARATOR) }.toSet()
+        p[HOST_PROFILES] = others + (address + PROFILE_SEPARATOR + profileId)
+    }
+
     private fun update(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
         scope.launch { store.edit(block) }
     }
@@ -65,5 +84,7 @@ class HostStore(
         val HID_PAIRED = stringSetPreferencesKey("hid_paired")
         val NEEDS_REPAIR = stringSetPreferencesKey("needs_repair")
         val LAST_HOST = stringPreferencesKey("last_host")
+        val HOST_PROFILES = stringSetPreferencesKey("host_profiles")
+        const val PROFILE_SEPARATOR = "|"
     }
 }

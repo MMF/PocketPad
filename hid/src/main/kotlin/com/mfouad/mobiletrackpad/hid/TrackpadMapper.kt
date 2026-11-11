@@ -2,7 +2,9 @@ package com.mfouad.mobiletrackpad.hid
 
 import com.mfouad.mobiletrackpad.gesture.GestureEvent
 import com.mfouad.mobiletrackpad.gesture.PointerButton
+import com.mfouad.mobiletrackpad.gesture.SwipeDirection
 import kotlin.math.hypot
+import kotlin.math.ln
 import kotlin.math.min
 
 /**
@@ -35,26 +37,72 @@ data class PointerSettings(
     }
 }
 
-/** Maps recognised gestures to the report sender. Engine thread only. */
+/**
+ * Maps recognised gestures to the report sender. Engine thread only.
+ *
+ * Pinch and rotate are continuous: each [ShortcutSteps.pinchLogStep] of scale change or
+ * [ShortcutSteps.rotateDegrees] of rotation performs the mapped action once. Three-finger swipes
+ * perform their action once per gesture.
+ *
+ * @param onShortcut called before a shortcut is performed, so the caller can stop scroll
+ *   inertia; together with the sender discarding pending scroll this keeps residual scrolling
+ *   out of modifier shortcuts.
+ * @param onShortcutResult called with each performed action and whether the sender accepted it.
+ */
 class TrackpadMapper(
     private val sender: ReportSender,
     var settings: PointerSettings,
+    var profile: HostProfile = HostProfiles.default(HostProfiles.CUSTOM),
+    var steps: ShortcutSteps = ShortcutSteps(),
+    private val onShortcut: () -> Unit = {},
+    private val onShortcutResult: (GestureSlot, Action, Boolean) -> Unit = { _, _, _ -> },
 ) {
+    private var pinchAccumulated = 0.0
+    private var rotateAccumulated = 0f
+
     fun onEvent(e: GestureEvent) {
         when (e) {
             is GestureEvent.Move -> move(e.dx, e.dy)
-
             is GestureEvent.ButtonDown -> sender.press(e.button.toMouseButton())
-
             is GestureEvent.ButtonUp -> sender.release(e.button.toMouseButton())
-
             is GestureEvent.Scroll -> scroll(e.dx, e.dy)
-
             GestureEvent.Cancel -> sender.releaseAll()
-
-            // Mapped to shortcuts in Milestone 4.
-            is GestureEvent.Pinch, is GestureEvent.Rotate, is GestureEvent.Swipe3 -> Unit
+            is GestureEvent.Pinch -> pinch(e)
+            is GestureEvent.Rotate -> rotate(e)
+            is GestureEvent.Swipe3 -> perform(e.direction.slot())
         }
+    }
+
+    private fun pinch(e: GestureEvent.Pinch) {
+        if (e.start) pinchAccumulated = 0.0
+        pinchAccumulated += ln(1.0 + e.scaleDelta)
+        while (pinchAccumulated >= steps.pinchLogStep) {
+            pinchAccumulated -= steps.pinchLogStep
+            perform(GestureSlot.PINCH_OUT)
+        }
+        while (pinchAccumulated <= -steps.pinchLogStep) {
+            pinchAccumulated += steps.pinchLogStep
+            perform(GestureSlot.PINCH_IN)
+        }
+    }
+
+    private fun rotate(e: GestureEvent.Rotate) {
+        if (e.start) rotateAccumulated = 0f
+        rotateAccumulated += e.degrees
+        while (rotateAccumulated >= steps.rotateDegrees) {
+            rotateAccumulated -= steps.rotateDegrees
+            perform(GestureSlot.ROTATE_CLOCKWISE)
+        }
+        while (rotateAccumulated <= -steps.rotateDegrees) {
+            rotateAccumulated += steps.rotateDegrees
+            perform(GestureSlot.ROTATE_COUNTERCLOCKWISE)
+        }
+    }
+
+    private fun perform(slot: GestureSlot) {
+        val action = profile.actionFor(slot) ?: return
+        onShortcut()
+        onShortcutResult(slot, action, sender.perform(action))
     }
 
     private fun move(
@@ -76,6 +124,26 @@ class TrackpadMapper(
         sender.scroll(wheel = -dy / s.pxPerDetent * sign, pan = dx / s.pxPerDetent * sign)
     }
 }
+
+/** How much pinch or rotation triggers one shortcut. */
+data class ShortcutSteps(
+    /** Natural log of the scale change per step; ln(1.25) means every 25% of spread. */
+    val pinchLogStep: Double = ln(DEFAULT_PINCH_STEP_SCALE),
+    val rotateDegrees: Float = DEFAULT_ROTATE_STEP_DEGREES,
+) {
+    companion object {
+        const val DEFAULT_PINCH_STEP_SCALE = 1.25
+        const val DEFAULT_ROTATE_STEP_DEGREES = 30f
+    }
+}
+
+private fun SwipeDirection.slot(): GestureSlot =
+    when (this) {
+        SwipeDirection.UP -> GestureSlot.SWIPE3_UP
+        SwipeDirection.DOWN -> GestureSlot.SWIPE3_DOWN
+        SwipeDirection.LEFT -> GestureSlot.SWIPE3_LEFT
+        SwipeDirection.RIGHT -> GestureSlot.SWIPE3_RIGHT
+    }
 
 fun PointerButton.toMouseButton(): MouseButton =
     when (this) {

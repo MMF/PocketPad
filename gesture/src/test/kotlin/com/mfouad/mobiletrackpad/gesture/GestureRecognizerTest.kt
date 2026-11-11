@@ -444,6 +444,44 @@ class GestureRecognizerTest {
         assertEquals(emptyList(), clicks())
     }
 
+    // --- large-contact (palm) rejection ---------------------------------------------------
+
+    @Test
+    fun largeContactIsIgnoredWhileAFingerStillWorks() {
+        touch {
+            fingers[9] = Pointer(9, 500f, 900f, size = 0.8f) // palm lands first
+            recognizer.onFrame(PointerFrame(t * MS, FrameAction.DOWN, fingers.values.toList(), 9))
+            down(0, 100f, 100f)
+            move(60f, 0f, ids = listOf(0))
+            up(0)
+            recognizer.onFrame(PointerFrame(t * MS, FrameAction.UP, fingers.values.toList(), 9))
+        }
+        assertEquals(emptyList(), clicks(), "the palm does not turn a one-finger move into a two-finger gesture")
+        assertNear(60f, sumMove().first)
+    }
+
+    @Test
+    fun largeContactAloneDoesNotClick() {
+        touch {
+            fingers[9] = Pointer(9, 500f, 900f, size = 0.9f)
+            recognizer.onFrame(PointerFrame(t * MS, FrameAction.DOWN, fingers.values.toList(), 9))
+            pause(60)
+            recognizer.onFrame(PointerFrame(t * MS, FrameAction.UP, fingers.values.toList(), 9))
+        }
+        assertEquals(emptyList(), events)
+    }
+
+    @Test
+    fun normalContactSizeIsNotRejected() {
+        touch {
+            fingers[0] = Pointer(0, 100f, 100f, size = 0.2f)
+            recognizer.onFrame(PointerFrame(t * MS, FrameAction.DOWN, fingers.values.toList(), 0))
+            pause(60)
+            up(0)
+        }
+        assertEquals(listOf(ButtonDown(PRIMARY), ButtonUp(PRIMARY)), events)
+    }
+
     // --- cancellation --------------------------------------------------------------------------
 
     @Test

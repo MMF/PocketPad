@@ -56,6 +56,7 @@ class SimulatedSessionTest {
 
     @Before
     fun startSimulatedComputer() {
+        rule.passOnboardingIfShown()
         controller.stop()
         waitFor("idle") { !controller.state.value.isActive }
         click(R.string.action_simulate)
@@ -156,7 +157,7 @@ class SimulatedSessionTest {
     ) = kotlin.math.abs(int16(r, offset))
 
     private companion object {
-        const val TIMEOUT_MS = 5_000L
+        const val TIMEOUT_MS = 10_000L // generous: the emulator can be slow under load
         const val X = 1
         const val Y = 3
         const val WHEEL = 5

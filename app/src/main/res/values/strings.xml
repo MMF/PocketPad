@@ -114,6 +114,161 @@
     <string name="diagnostics_copied">Log copied</string>
     <string name="diagnostics_share_subject">Mobile TrackPad diagnostics</string>
 
+    <!-- Navigation -->
+    <string name="action_settings">Settings</string>
+    <string name="action_next">Next</string>
+    <string name="action_done">Done</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_reset">Reset</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_pointer">Pointer</string>
+    <string name="settings_section_scrolling">Scrolling</string>
+    <string name="settings_section_clicking">Clicking</string>
+    <string name="settings_section_trackpad">Trackpad screen</string>
+    <string name="settings_section_power">Battery</string>
+    <string name="settings_section_more">More</string>
+    <string name="settings_pointer_speed">Pointer speed</string>
+    <string name="settings_acceleration">Extra speed for fast moves</string>
+    <string name="settings_acceleration_hint">Your computer already accelerates the pointer, so keep this low.</string>
+    <string name="settings_scroll_speed">Scroll speed</string>
+    <string name="settings_reverse_scroll">Reverse scroll direction</string>
+    <string name="settings_reverse_scroll_hint">Off: scrolling follows your computer’s own setting (for example macOS natural scrolling).</string>
+    <string name="settings_inertia">Scroll momentum</string>
+    <string name="settings_inertia_hint">Keep scrolling briefly after a quick two-finger flick.</string>
+    <string name="settings_tap_to_click">Tap to click</string>
+    <string name="settings_drag_lock">Drag lock</string>
+    <string name="settings_drag_lock_hint">After a drag, keep the button held until you tap. A banner shows while it is held.</string>
+    <string name="settings_haptics">Vibrate on click</string>
+    <string name="settings_on_screen_buttons">On-screen mouse buttons</string>
+    <string name="settings_left_handed">Left-handed button layout</string>
+    <string name="settings_left_handed_hint">Swaps the on-screen buttons: the primary button is on the right.</string>
+    <string name="settings_battery_saver">Battery saving</string>
+    <string name="settings_battery_saver_hint">Dims the trackpad screen, turns off vibration, avoids high refresh rates and sends slightly fewer reports while moving.</string>
+    <string name="settings_mappings">Gesture shortcuts</string>
+    <string name="settings_setup_guide">Show setup guide</string>
+    <string name="settings_reset">Reset settings to defaults</string>
+    <string name="settings_reset_confirm_title">Reset settings?</string>
+    <string name="settings_reset_confirm_body">All settings on this screen return to their defaults. Gesture shortcuts and paired computers are not changed.</string>
+    <string name="settings_value_multiplier">%1$s×</string>
+
+    <!-- Profiles and mappings -->
+    <string name="profiles_title">Gesture shortcuts</string>
+    <string name="profiles_intro">Pinch, rotate and three-finger swipes send keyboard shortcuts, media keys or clicks. Choose a profile for each computer on the main screen. Shortcuts assume the computer’s default shortcuts and a US keyboard layout; letters and punctuation can differ on other layouts.</string>
+    <string name="profile_reset">Restore built-in shortcuts</string>
+    <string name="profile_used_by">Profile: %1$s</string>
+    <string name="slot_pinch_out">Pinch out (spread fingers)</string>
+    <string name="slot_pinch_in">Pinch in</string>
+    <string name="slot_rotate_cw">Rotate clockwise</string>
+    <string name="slot_rotate_ccw">Rotate counter-clockwise</string>
+    <string name="slot_swipe_up">Three-finger swipe up</string>
+    <string name="slot_swipe_down">Three-finger swipe down</string>
+    <string name="slot_swipe_left">Three-finger swipe left</string>
+    <string name="slot_swipe_right">Three-finger swipe right</string>
+    <string name="action_none">Nothing</string>
+    <string name="action_type_label">Action</string>
+    <string name="action_type_none">Nothing</string>
+    <string name="action_type_click">Mouse button</string>
+    <string name="action_type_keys">Keyboard shortcut</string>
+    <string name="action_type_media">Media key</string>
+    <string name="action_type_modwheel">Modifier + scroll wheel</string>
+    <string name="action_type_sequence">Sequence</string>
+    <string name="action_modifiers">Modifier keys</string>
+    <string name="action_key">Key</string>
+    <string name="action_key_none">No key</string>
+    <string name="action_wheel_up">Wheel up</string>
+    <string name="action_wheel_down">Wheel down</string>
+    <string name="action_add_step">Add step</string>
+    <string name="action_remove_step">Remove step</string>
+    <string name="action_step">Step %1$d</string>
+    <string name="action_sequence_desc">%1$s, then %2$s</string>
+    <string name="action_click_desc">Click: %1$s</string>
+    <string name="action_media_desc">Media: %1$s</string>
+    <string name="action_modwheel_desc">%1$s + %2$s</string>
+    <string name="action_edit">Edit</string>
+    <string name="mod_ctrl">Ctrl</string>
+    <string name="mod_shift">Shift</string>
+    <string name="mod_alt">Alt / Option</string>
+    <string name="mod_gui">Win / Cmd / Super</string>
+    <string name="mod_alt_mac">Option</string>
+    <string name="mod_alt_pc">Alt</string>
+    <string name="mod_gui_mac">Cmd</string>
+    <string name="mod_gui_windows">Win</string>
+    <string name="mod_gui_linux">Super</string>
+    <string name="mod_right_ctrl">Right Ctrl</string>
+    <string name="mod_right_shift">Right Shift</string>
+    <string name="mod_right_alt">Right Alt / Option</string>
+    <string name="mod_right_gui">Right Win / Cmd / Super</string>
+    <string name="button_primary">Left (primary)</string>
+    <string name="button_secondary">Right (secondary)</string>
+    <string name="button_tertiary">Middle</string>
+    <string name="button_4">Button 4 (often Back)</string>
+    <string name="button_5">Button 5 (often Forward)</string>
+    <string name="media_play_pause">Play / pause</string>
+    <string name="media_next">Next track</string>
+    <string name="media_previous">Previous track</string>
+    <string name="media_mute">Mute</string>
+    <string name="media_volume_up">Volume up</string>
+    <string name="media_volume_down">Volume down</string>
+    <string name="media_zoom_in">Zoom in (AC Zoom In)</string>
+    <string name="media_zoom_out">Zoom out (AC Zoom Out)</string>
+    <string name="media_other">Consumer usage 0x%1$04X</string>
+    <string name="key_enter">Enter</string>
+    <string name="key_escape">Esc</string>
+    <string name="key_backspace">Backspace</string>
+    <string name="key_tab">Tab</string>
+    <string name="key_space">Space</string>
+    <string name="key_minus">- (minus)</string>
+    <string name="key_equal">= (equals / plus)</string>
+    <string name="key_home">Home</string>
+    <string name="key_end">End</string>
+    <string name="key_page_up">Page Up</string>
+    <string name="key_page_down">Page Down</string>
+    <string name="key_delete">Delete</string>
+    <string name="key_left">Left arrow</string>
+    <string name="key_right">Right arrow</string>
+    <string name="key_up">Up arrow</string>
+    <string name="key_down">Down arrow</string>
+    <string name="key_keypad_plus">Keypad +</string>
+    <string name="key_keypad_minus">Keypad -</string>
+    <string name="key_other">Key 0x%1$02X</string>
+
+    <!-- Reconnect and exit notice -->
+    <string name="reconnect_status">Connection lost. Reconnecting to %1$s (attempt %2$d of %3$d)…</string>
+    <string name="reconnect_cancel">Stop reconnecting</string>
+    <string name="exit_notice_title">Stopped from Android settings</string>
+    <string name="exit_notice_body">Mobile TrackPad was stopped by Android’s Task Manager or app settings while the trackpad was active. The app gets no warning when this happens, so it could not release held buttons or disconnect cleanly. If anything seems stuck on the computer, click once with its own mouse or trackpad.</string>
+    <string name="action_dismiss">Dismiss</string>
+
+    <!-- Trackpad extras -->
+    <string name="trackpad_button_primary">Left button</string>
+    <string name="trackpad_button_secondary">Right button</string>
+    <string name="trackpad_drag_locked">Drag lock: button held</string>
+    <string name="trackpad_release">Release</string>
+    <string name="trackpad_reconnecting">Reconnecting…</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_welcome">Welcome</string>
+    <string name="onboarding_body_welcome">Mobile TrackPad turns this phone into a Bluetooth mouse for your computer. The computer needs no extra software.\n\nIt works as a standard mouse and keyboard. Pinch, rotate and three-finger gestures are sent as keyboard shortcuts, so they are not the same as your computer’s own trackpad gestures, and what a shortcut does depends on the computer and the app.</string>
+    <string name="onboarding_title_permissions">Permissions</string>
+    <string name="onboarding_body_permissions">The app needs the Nearby devices permission to act as a Bluetooth mouse and to make the phone visible while you pair. Notifications are optional: they show a Stop button while the trackpad is on. The app has no internet access.</string>
+    <string name="onboarding_permissions_granted">Nearby devices permission granted.</string>
+    <string name="onboarding_title_check">Compatibility check</string>
+    <string name="onboarding_body_check">This checks that Bluetooth and Android’s Bluetooth HID device service are available. It cannot prove that a particular computer will accept the phone; only pairing can.</string>
+    <string name="onboarding_run_check">Run check</string>
+    <string name="check_adapter">Bluetooth hardware</string>
+    <string name="check_enabled">Bluetooth turned on</string>
+    <string name="check_permission">Nearby devices permission</string>
+    <string name="check_profile">Bluetooth HID device service</string>
+    <string name="check_ok">OK</string>
+    <string name="check_failed">Not available</string>
+    <string name="check_pending">Checking…</string>
+    <string name="check_skipped">Not checked</string>
+    <string name="onboarding_title_pairing">Pairing order</string>
+    <string name="onboarding_body_pairing">Order matters: computers remember what a device offered when they paired.\n\n1. On the main screen, tap Enable trackpad first.\n2. Tap Make phone visible for pairing.\n3. Pair from the computer’s Bluetooth settings.\n4. Choose a shortcut profile for that computer, then tap Connect.\n\nIf this phone was already paired with the computer, remove the pairing on both the phone and the computer, then pair again in this order.\n\nTap Stop before turning Bluetooth off. On some phones, turning Bluetooth off while the trackpad is on means the phone must be restarted before it works again.</string>
+
     <!-- Notification -->
     <string name="notification_channel_name">Trackpad session</string>
     <string name="notification_channel_description">Shown while the phone is acting as a Bluetooth mouse.</string>
